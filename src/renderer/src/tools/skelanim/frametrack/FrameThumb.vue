@@ -168,7 +168,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    v-tooltip="isRef ? 'Reference pose (sent as the first frame)' : null"
+    v-tooltip="isRef ? 'Reference pose (sent as the first frame)' : `Frame ${index} · drag to reorder`"
     class="frame-thumb checker"
     :class="{ 'is-active': active, 'is-ref': isRef }"
     :style="{ width: `${size.w}px`, height: `${size.h}px` }"

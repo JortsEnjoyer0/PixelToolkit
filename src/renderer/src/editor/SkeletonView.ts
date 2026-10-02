@@ -86,6 +86,7 @@ export class SkeletonView {
   private light = new THREE.DirectionalLight(0xffffff, 1.6);
   private fkr: FkResult | null = null;
   private calib: RigCalibration | null = null;
+  private shown = true;
   private selected = -1;
   private hover = -1;
   private dimmed = false;
@@ -134,7 +135,17 @@ export class SkeletonView {
   setPose(fkr: FkResult | null, calib: RigCalibration | null): void {
     this.fkr = fkr;
     this.calib = calib;
-    this.group.visible = fkr !== null && calib !== null;
+    this.updateVisibility();
+  }
+
+  /** The skeleton toolbar toggle (hidden while watching an animation unobstructed). */
+  setShown(on: boolean): void {
+    this.shown = on;
+    this.updateVisibility();
+  }
+
+  private updateVisibility(): void {
+    this.group.visible = this.shown && this.fkr !== null && this.calib !== null;
   }
 
   /** Bone indices (-1 = none). Dimmed in COCO edit mode (the rig is not pickable there). */

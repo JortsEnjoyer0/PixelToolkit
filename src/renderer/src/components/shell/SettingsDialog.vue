@@ -380,7 +380,7 @@ onMounted(async () => {
           />
           <Checkbox
             v-model="form.showCoco"
-            label="Show the COCO-18 overlay"
+            label="Show the OpenPose overlay"
           />
         </div>
         <p class="form-hint">

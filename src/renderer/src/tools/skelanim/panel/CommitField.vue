@@ -18,7 +18,7 @@ const props = withDefaults(defineProps<{
   validate?: (value: string) => string | null;
   /** External error text (cleared by the parent; 'edit' fires on the first keystroke of an edit). */
   error?: string | null;
-  /** Show "n / maxlength" while focused. */
+  /** Show "n / maxlength" while focused, right-aligned on the label's line above the field (no layout shift). */
   counter?: boolean;
 }>(), { rows: 3 });
 
@@ -130,23 +130,33 @@ defineExpose({ revert, focus: (): void => el.value?.focus() });
       @blur="onBlur"
       @keydown="onKeydown"
     >
+    <span
+      v-if="counter && maxlength && focused"
+      class="form-hint commit-field-counter tabular"
+      aria-live="polite"
+    >
+      {{ text.length }} / {{ maxlength }}
+    </span>
     <p
       v-if="shownError"
       class="form-error"
     >
       {{ shownError }}
     </p>
-    <p
-      v-else-if="counter && maxlength && focused"
-      class="form-hint commit-field-counter tabular"
-    >
-      {{ text.length }} / {{ maxlength }}
-    </p>
   </div>
 </template>
 
 <style scoped>
+/* The root's top edge is the field's top edge: the counter hangs above it, on the label's line, out of the flow */
+.commit-field {
+  position: relative;
+}
+
 .commit-field-counter {
-  align-self: flex-end;
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + var(--space-1));
+  white-space: nowrap;
+  pointer-events: none;
 }
 </style>

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 // Frame track (data-zone="frametrack"): FrameToolbar over the strip [REF] 1 2 … N [+]. Click selects the playback
-// target, the context menu clones / deletes, '+' appends. Keys: Delete (frametrack zone) deletes the active frame,
-// Left / Right (editor + frametrack zones) step. The strip keeps the active thumbnail scrolled into view.
+// target, drag reorders the numbered frames (one 'Move Frame' undo entry; REF and '+' stay put), the context menu
+// clones / deletes, '+' appends. Keys: Delete (frametrack zone) deletes the active frame, Left / Right (editor +
+// frametrack zones) step. The strip keeps the active thumbnail scrolled into view.
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { Copy, Plus, Trash2 } from '@lucide/vue';
+import { useDraggable, type DraggableEvent } from 'vue-draggable-plus';
 import { sameTarget } from '../../../core/docState';
-import type { FrameTarget } from '../../../core/model';
+import type { FrameData, FrameTarget } from '../../../core/model';
 import { contextMenu } from '../../../services/contextMenu';
 import { shortcuts } from '../../../services/shortcuts';
 import { usePlaybackStore } from '../../../stores/playback';
@@ -13,7 +15,7 @@ import { useTabsStore } from '../../../stores/tabs';
 import type { DocHandle } from '../../../stores/types';
 import FrameThumb from './FrameThumb.vue';
 import FrameToolbar from './FrameToolbar.vue';
-import { REF_TARGET, addFrame, canClone, cloneTarget, deleteFrame } from './frameOps';
+import { REF_TARGET, addFrame, canClone, cloneTarget, deleteFrame, moveFrame } from './frameOps';
 
 const props = withDefaults(defineProps<{
   doc: DocHandle;
@@ -25,7 +27,29 @@ const playback = usePlaybackStore();
 const tabs = useTabsStore();
 
 const strip = ref<HTMLElement | null>(null);
+const list = ref<HTMLElement | null>(null);
 const frames = computed(() => props.doc.state.value.frames);
+/** A fresh copy for the sortable. The library reverts its own DOM move and writes a reordered copy back here, which is
+ * ignored: the 'Move Frame' undo entry re-renders the strip from the doc. */
+const sortable = computed<FrameData[]>({ get: () => [...frames.value], set: () => undefined });
+
+function onReorder(e: DraggableEvent): void {
+  const from = e.oldDraggableIndex ?? e.oldIndex;
+  const to = e.newDraggableIndex ?? e.newIndex;
+  if (from !== undefined && to !== undefined && from !== to)
+    select(moveFrame(props.doc, from, to));
+}
+
+useDraggable(list, sortable, {
+  animation: 150,
+  direction: 'horizontal',
+  ghostClass: 'is-drag-ghost',
+  onStart: () => {
+    if (playback.playing)
+      playback.pause();
+  },
+  onUpdate: onReorder
+});
 const active = computed(() => playback.target(props.doc.id));
 const activeKey = computed(() => active.value.kind === 'ref' ? 'ref' : active.value.uid);
 
@@ -145,17 +169,23 @@ onBeforeUnmount(() => {
         @menu="onMenu"
       />
       <div class="frame-strip-divider" />
-      <FrameThumb
-        v-for="(f, i) in frames"
-        :key="f.uid"
-        :doc="doc"
-        :frame="f"
-        :index="i + 1"
-        :height="thumbHeight"
-        :active="isActive({ kind: 'frame', uid: f.uid })"
-        @select="onSelect"
-        @menu="onMenu"
-      />
+      <div
+        ref="list"
+        class="frame-list"
+        :class="{ 'is-empty': !frames.length }"
+      >
+        <FrameThumb
+          v-for="(f, i) in frames"
+          :key="f.uid"
+          :doc="doc"
+          :frame="f"
+          :index="i + 1"
+          :height="thumbHeight"
+          :active="isActive({ kind: 'frame', uid: f.uid })"
+          @select="onSelect"
+          @menu="onMenu"
+        />
+      </div>
       <button
         v-tooltip="frames.length ? 'Add frame (copy of the last frame)' : 'Add frame'"
         type="button"
@@ -190,6 +220,22 @@ onBeforeUnmount(() => {
   padding: var(--space-2) var(--space-3);
   overflow-x: auto;
   overflow-y: hidden;
+}
+
+/* Not positioned: thumbnails' offsetLeft stays relative to the strip (revealActive) */
+.frame-list {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: var(--space-2);
+}
+
+.frame-list.is-empty {
+  display: none;
+}
+
+.frame-thumb.is-drag-ghost {
+  opacity: 0.35;
 }
 
 .frame-strip-divider {

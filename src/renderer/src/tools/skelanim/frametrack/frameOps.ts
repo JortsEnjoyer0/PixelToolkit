@@ -1,4 +1,5 @@
-// Frame-track edits as undo entries ('Add Frame', 'Clone Frame', 'Delete Frame'), built from the docState producers.
+// Frame-track edits as undo entries ('Add Frame', 'Clone Frame', 'Delete Frame', 'Move Frame'), built from the docState
+// producers.
 // Each returns the target to select afterwards (null when nothing changed). Shared by the strip, its toolbar and keys.
 import { frameIndex, newFrame, withFrames } from '../../../core/docState';
 import type { FrameTarget, Pose, UndoableState } from '../../../core/model';
@@ -45,6 +46,20 @@ export function cloneTarget(doc: DocHandle, target: FrameTarget): FrameTarget | 
     const frame = newFrame(pose);
     const frames = s.frames.slice();
     frames.splice(at, 0, frame);
+    out.target = frameTarget(frame.uid);
+    return withFrames(s, frames);
+  });
+}
+
+/** Drag reorder: moves the frame at index `from` to index `to` (0-based track positions); returns it to select. */
+export function moveFrame(doc: DocHandle, from: number, to: number): FrameTarget | null {
+  return edit(doc, 'Move Frame', (s, out) => {
+    const n = s.frames.length;
+    if (from === to || from < 0 || to < 0 || from >= n || to >= n)
+      return s;
+    const frames = s.frames.slice();
+    const [frame] = frames.splice(from, 1);
+    frames.splice(to, 0, frame);
     out.target = frameTarget(frame.uid);
     return withFrames(s, frames);
   });

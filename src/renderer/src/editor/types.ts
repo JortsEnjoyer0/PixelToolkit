@@ -41,6 +41,8 @@ export interface DisplayOptions {
   /** Frame (or reference) image on the projection plane (same name as settings.editor.showFrameImage). */
   showFrameImage: boolean;
   showCoco: boolean;
+  /** Our rig skeleton (bones, joints, anchor). Hidden: no rig picking and no gizmo. */
+  showSkeleton: boolean;
   /** COCO edit mode: REF only; picking switches to COCO points (NECK excluded). */
   cocoEdit: boolean;
   /** 'translate' only applies to Hips; other bones are rotate-only. */
@@ -51,7 +53,7 @@ export interface DisplayOptions {
 }
 
 export const DEFAULT_DISPLAY: Readonly<DisplayOptions> = {
-  showFloor: true, showFrameImage: true, showCoco: true, cocoEdit: false, gizmoMode: 'rotate', gizmoSpace: 'local', ortho: true
+  showFloor: true, showFrameImage: true, showCoco: true, showSkeleton: true, cocoEdit: false, gizmoMode: 'rotate', gizmoSpace: 'local', ortho: true
 };
 
 export interface EditorEvents {

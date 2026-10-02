@@ -46,6 +46,7 @@ function parseDisplay(v: unknown, d: DisplayOptions): DisplayOptions {
     showFloor: bool('showFloor'),
     showFrameImage: bool('showFrameImage'),
     showCoco: bool('showCoco'),
+    showSkeleton: bool('showSkeleton'),
     cocoEdit: false,
     gizmoMode: raw.gizmoMode === 'translate' ? 'translate' : 'rotate',
     gizmoSpace: raw.gizmoSpace === 'world' ? 'world' : 'local',

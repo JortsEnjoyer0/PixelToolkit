@@ -1,9 +1,10 @@
 <script setup lang="ts">
-// Editor toolbar (PLAN §6 Editor): display toggles (floor, frame image, COCO-18 overlay), COCO edit (REF only), gizmo
+// Editor toolbar (PLAN §6 Editor): display toggles (floor, frame image, OpenPose overlay, rig skeleton), OpenPose (COCO)
+// point edit (REF only), gizmo
 // mode (Move only applies to Hips) and space, ortho / perspective, and Reset pose to the reference (undoable). Pure
 // view: EditorPane owns the viewport and applies the emitted changes.
 import { computed } from 'vue';
-import { Box, Globe, Grid3x3, Image, Move3d, Orbit, PenLine, Rotate3d, RotateCcw, Spline, Square } from '@lucide/vue';
+import { Bone, Box, Globe, Grid3x3, Image, Move3d, Orbit, PenLine, Rotate3d, RotateCcw, Spline, Square } from '@lucide/vue';
 import IconButton from '../../../components/common/IconButton.vue';
 import Toolbar from '../../../components/common/Toolbar.vue';
 import ToolbarSeparator from '../../../components/common/ToolbarSeparator.vue';
@@ -29,8 +30,8 @@ const world = computed(() => props.display.gizmoSpace === 'world');
 
 const cocoEditTip = computed(() => {
   if (!props.hasReference)
-    return 'Edit COCO-18 points (estimate the reference skeleton first)';
-  return props.display.cocoEdit ? 'Stop editing COCO-18 points' : 'Edit the reference COCO-18 points (switches to REF; Alt-drag moves in depth)';
+    return 'Edit OpenPose points (estimate the reference skeleton first)';
+  return props.display.cocoEdit ? 'Stop editing OpenPose points' : 'Edit the reference OpenPose points (switches to REF; Alt-drag moves in depth)';
 });
 const moveTip = computed(() => hipsSelected.value ? 'Move (Hips)' : 'Move (select the Hips anchor first)');
 const resetTip = computed(() => {
@@ -40,14 +41,14 @@ const resetTip = computed(() => {
 });
 const selectionText = computed(() => {
   if (props.display.cocoEdit)
-    return 'COCO edit: drag a point';
+    return 'OpenPose edit: drag a point';
   const b = props.selectedBone;
   if (!b)
     return '';
   return `${HUMAN_NAMES[b]}${b === 'Hips' ? ` · ${moving.value ? 'move' : 'rotate'}` : ''}`;
 });
 
-const toggle = (key: 'showFloor' | 'showFrameImage' | 'showCoco' | 'cocoEdit' | 'ortho'): void => {
+const toggle = (key: 'showFloor' | 'showFrameImage' | 'showCoco' | 'showSkeleton' | 'cocoEdit' | 'ortho'): void => {
   emit('set', { [key]: !props.display[key] });
 };
 </script>
@@ -71,9 +72,15 @@ const toggle = (key: 'showFloor' | 'showFrameImage' | 'showCoco' | 'cocoEdit' | 
     />
     <IconButton
       :icon="Spline"
-      tooltip="COCO-18 overlay"
+      tooltip="OpenPose overlay"
       :active="display.showCoco"
       @click="toggle('showCoco')"
+    />
+    <IconButton
+      :icon="Bone"
+      :tooltip="'Skeleton visibility'"
+      :active="display.showSkeleton"
+      @click="toggle('showSkeleton')"
     />
     <IconButton
       :icon="PenLine"

@@ -20,11 +20,12 @@ const COMPASS: readonly (Direction | null)[] = ['north-west', 'north', 'north-ea
 const COMPASS_LABEL: Readonly<Record<Direction, string>> = {
   'north-west': 'NW', north: 'N', 'north-east': 'NE', west: 'W', east: 'E', 'south-west': 'SW', south: 'S', 'south-east': 'SE'
 };
-const TOGGLES: readonly { key: 'showFloor' | 'showFrameImage' | 'showCoco' | 'cocoEdit' | 'ortho'; label: string }[] = [
+const TOGGLES: readonly { key: 'showFloor' | 'showFrameImage' | 'showCoco' | 'showSkeleton' | 'cocoEdit' | 'ortho'; label: string }[] = [
   { key: 'showFloor', label: 'Floor' },
   { key: 'showFrameImage', label: 'Frame image' },
-  { key: 'showCoco', label: 'COCO-18 overlay' },
-  { key: 'cocoEdit', label: 'COCO edit (REF only)' },
+  { key: 'showCoco', label: 'OpenPose overlay' },
+  { key: 'showSkeleton', label: 'Skeleton' },
+  { key: 'cocoEdit', label: 'OpenPose edit (REF only)' },
   { key: 'ortho', label: 'Orthographic' }
 ];
 

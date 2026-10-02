@@ -22,7 +22,7 @@ export function prepareImport(bytes: Uint8Array, label: string): PreparedImage {
     throw new Error(`"${label}" is not a PNG file`);
   const size = pngSize(bytes);
   if (size && (size.width > MAX_CANVAS_SIZE || size.height > MAX_CANVAS_SIZE))
-    throw new Error(`"${label}" is ${size.width}×${size.height} px; images can be at most ${MAX_CANVAS_SIZE} px per side (they are padded, never scaled)`);
+    throw new Error(`"${label}" is ${size.width}×${size.height}px; longest side cannot exceed ${MAX_CANVAS_SIZE}px`);
   let img: RgbaImage;
   try {
     img = decodePng(bytes);
@@ -30,7 +30,7 @@ export function prepareImport(bytes: Uint8Array, label: string): PreparedImage {
     throw new Error(`"${label}" could not be read as a PNG: ${(e as Error).message}`);
   }
   if (img.width > MAX_CANVAS_SIZE || img.height > MAX_CANVAS_SIZE)
-    throw new Error(`"${label}" is ${img.width}×${img.height} px; images can be at most ${MAX_CANVAS_SIZE} px per side (they are padded, never scaled)`);
+    throw new Error(`"${label}" is ${img.width}×${img.height}px; longest side cannot exceed ${MAX_CANVAS_SIZE}px`);
   const padded = padToSquare(img);
   return { png: encodePng(padded.img), width: padded.width, height: padded.height, srcWidth: img.width, srcHeight: img.height, offset: padded.offset };
 }

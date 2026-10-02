@@ -382,9 +382,6 @@ function onKeydown(e: KeyboardEvent): void {
             />
           </div>
         </div>
-        <p class="form-hint">
-          Imports and removals are saved right away; labels and directions are saved with Save.
-        </p>
       </div>
     </template>
     <template #footer>

@@ -480,10 +480,11 @@ export class EditorViewport implements IEditorViewport {
       forced = true;
     }
     const dragSensitive = prev.gizmoMode !== next.gizmoMode || prev.gizmoSpace !== next.gizmoSpace || prev.ortho !== next.ortho;
-    if (prev.cocoEdit !== next.cocoEdit || (dragSensitive && this.drag !== null))
+    const hidingSkeleton = prev.showSkeleton && !next.showSkeleton;
+    if (prev.cocoEdit !== next.cocoEdit || ((dragSensitive || hidingSkeleton) && this.drag !== null))
       this.cancelInteraction();
     this.display = next;
-    if (next.cocoEdit && !prev.cocoEdit)
+    if ((next.cocoEdit && !prev.cocoEdit) || hidingSkeleton)
       this.select(-1);
     this.applyDisplay();
     if (this.state)
@@ -504,6 +505,7 @@ export class EditorViewport implements IEditorViewport {
     this.plane.setShowFloor(d.showFloor);
     this.plane.setShowImage(d.showFrameImage);
     this.coco.setVisible(d.showCoco || this.cocoEditActive());
+    this.skeleton.setShown(d.showSkeleton);
     this.gizmo.setSpace(d.gizmoSpace);
     this.rig.setOrtho(d.ortho);
     this.updateImage();
@@ -559,7 +561,7 @@ export class EditorViewport implements IEditorViewport {
   }
 
   private attachGizmo(): void {
-    const on = this.selected >= 0 && this.hasPose && !this.cocoEditActive();
+    const on = this.selected >= 0 && this.hasPose && this.display.showSkeleton && !this.cocoEditActive();
     this.gizmo.attach(on ? this.selected : -1, this.display.gizmoMode, on ? this.fkr : null);
   }
 
@@ -590,7 +592,7 @@ export class EditorViewport implements IEditorViewport {
   }
 
   private pickRigAt(x: number, y: number, w: number, h: number): RigHit | null {
-    if (!this.hasPose || this.cocoEditActive())
+    if (!this.hasPose || !this.display.showSkeleton || this.cocoEditActive())
       return null;
     return this.picker.pickRig(this.fkr, this.rig.camera, { w, h }, x, y);
   }

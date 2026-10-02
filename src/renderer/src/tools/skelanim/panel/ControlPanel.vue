@@ -25,6 +25,7 @@ import { errorMessage } from '../../../services/errors';
 import { useDocumentsStore } from '../../../stores/documents';
 import { useJobsStore } from '../../../stores/jobs';
 import type { ApplyOptions, DocHandle } from '../../../stores/types';
+import { openCharacterDialog } from '../explorer/characterDialog';
 import { TEMPLATE_OPTIONS, VIEW_OPTIONS } from '../explorer/characterForm';
 import CommitField from './CommitField.vue';
 import DirectionPicker from './DirectionPicker.vue';
@@ -132,6 +133,11 @@ const estimateTip = computed(() => {
     return 'An API call is pending for this animation';
   return 'Estimate the reference skeleton (uses the base image\'s cached estimate when there is one)';
 });
+
+/** Clicking the reference preview opens the character dialog (base images, description, defaults). */
+function openCharacter(): void {
+  void openCharacterDialog(props.doc.charRel.value);
+}
 
 function pick(base: BaseImage): void {
   void pickBaseImage(props.doc, base);
@@ -248,7 +254,13 @@ function setSendDepth(sendDepth: boolean): void {
         </div>
         <div class="section-body">
           <div class="row gap-3 items-start">
-            <div class="reference-preview checker">
+            <button
+              v-tooltip="'Open the character dialog (base images, description, defaults)'"
+              type="button"
+              class="reference-preview checker"
+              aria-label="Open the character dialog"
+              @click="openCharacter"
+            >
               <img
                 v-if="referenceUrl"
                 class="pixelated"
@@ -260,7 +272,7 @@ function setSendDepth(sendDepth: boolean): void {
                 v-else
                 class="text-faint text-xs"
               >No image</span>
-            </div>
+            </button>
             <div class="col gap-1 min-w-0">
               <span class="text-sm truncate">{{ sourceText }}</span>
               <span class="text-xs text-dim tabular">Canvas {{ reference.width }} × {{ reference.height }} px</span>
@@ -489,9 +501,15 @@ function setSendDepth(sendDepth: boolean): void {
   flex: 0 0 auto;
   width: 72px;
   height: 72px;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   overflow: hidden;
+  cursor: pointer;
+}
+
+.reference-preview:hover {
+  border-color: var(--control-border-hover);
 }
 
 .reference-preview > img {
