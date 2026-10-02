@@ -1,0 +1,164 @@
+/* PixelToolkit design tokens: dark "night" theme with a very subtle blue bias. */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces, deepest to highest */
+  --bg-0: #0a0c10;   /* viewport, wells, inputs */
+  --bg-1: #0e1014;   /* app background (matches BrowserWindow backgroundColor) */
+  --bg-2: #13161c;   /* panels, sidebars */
+  --bg-3: #191d25;   /* toolbars, raised controls */
+  --bg-4: #212631;   /* menus, popovers, hovered controls */
+  --bg-hover: rgba(150, 180, 255, 0.06);
+  --bg-active: rgba(150, 180, 255, 0.11);
+  --bg-overlay: rgba(4, 6, 10, 0.62);   /* modal backdrop */
+
+  /* Lines */
+  --border: #232834;
+  --border-strong: #313847;
+  --border-subtle: rgba(255, 255, 255, 0.09);   /* hairline on translucent popups (mouse notes) */
+
+  /* Text */
+  --text: #d8dde6;
+  --text-dim: #9aa3b3;
+  --text-faint: #636c7c;
+  --text-on-accent: #ffffff;
+
+  /* Accent and status */
+  --accent: #4c8dff;
+  --accent-hover: #6aa1ff;
+  --accent-dim: rgba(76, 141, 255, 0.18);
+  --danger: #e5534b;
+  --danger-dim: rgba(229, 83, 75, 0.16);
+  --success: #3fb27f;
+  --success-dim: rgba(63, 178, 127, 0.16);
+  --warning: #d9a03f;
+  --warning-dim: rgba(217, 160, 63, 0.16);
+  --focus-ring: rgba(76, 141, 255, 0.75);
+
+  /* Transparent-image checkerboard */
+  --checker-a: #1b1f27;
+  --checker-b: #242a34;
+  --checker-size: 8px;
+  --thumb-checker-a: #33373e;   /* frame-track thumbnails: lighter grey, so skeletons and dark sprites read */
+  --thumb-checker-b: #3d424a;
+
+  /* Typography */
+  --font-ui: system-ui, 'Segoe UI', -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 13px;
+  --font-size-lg: 15px;
+  --font-size-xl: 18px;
+  --font-size-xxl: 24px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;
+  --line-height: 1.4;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Sizes */
+  --control-height: 28px;
+  --control-height-sm: 22px;
+  --icon-size: 16px;
+  --icon-size-sm: 14px;
+  --navbar-width: 72px;
+  --toolbar-height: 36px;
+  --tabbar-height: 34px;
+  --panel-width: 300px;
+  --scrollbar-size: 10px;
+
+  /* Radii */
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+  --radius-round: 999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.55);
+
+  /* Motion */
+  --speed-fast: 80ms;
+  --speed-normal: 150ms;
+  --speed-slow: 260ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ---- Shell and common controls ---- */
+
+  /* Controls */
+  --radius: 4px;                          /* default control radius (buttons, inputs, menus, toasts) */
+  --radius-popup: 6px;                    /* dialogs */
+  --control-bg: var(--bg-3);
+  --control-bg-hover: var(--bg-4);
+  --control-bg-active: #282e3a;
+  --control-border: var(--border-strong);
+  --control-border-hover: #3c4456;
+  --input-bg: var(--bg-0);
+  --input-border: var(--border-strong);
+  --input-border-hover: #3c4456;
+  --input-border-focus: var(--accent);
+  --input-placeholder: var(--text-faint);
+  --toolbar-button-size: 28px;
+  --toolbar-button-size-sm: 22px;
+  --row-height: 24px;
+  --section-header-height: 28px;
+  --tree-indent: 14px;
+  --form-label-width: 120px;
+  --disabled-opacity: 0.42;
+  --splitter-size: 5px;
+
+  /* Accent shades */
+  --accent-active: #3b7cf0;
+  --accent-muted: rgba(76, 141, 255, 0.28);   /* selected row with focus, toggled-button border */
+  --danger-hover: #ef6a63;
+  --danger-text: #f0817b;
+  --success-text: #5fd09d;
+  --warning-text: #e8b55c;
+  --danger-bg: #2a1719;                    /* opaque error bubble over content */
+  --warning-bg: rgba(40, 30, 10, 0.85);    /* warning badge over images */
+
+  /* Selection (lists, trees) */
+  --selection-bg: rgba(76, 141, 255, 0.22);
+  --selection-bg-inactive: rgba(150, 180, 255, 0.10);
+  --tree-guide: rgba(150, 180, 255, 0.07);
+  --tree-guide-hover: rgba(150, 180, 255, 0.12);
+  --tree-guide-active: rgba(150, 180, 255, 0.28);
+  --icon-folder: #8d9cb6;
+  --icon-character: #7fa3e0;
+
+  /* Popups */
+  --menu-bg: #1c2029;
+  --menu-hover: rgba(76, 141, 255, 0.20);
+  --tooltip-bg: #262b36;
+  --tooltip-text: #e2e6ee;
+  --toast-bg: #1a1e26;
+  --dialog-bg: var(--bg-2);
+  --note-bg: rgba(18, 21, 28, 0.82);
+  --kbd-bg: rgba(255, 255, 255, 0.06);
+  --kbd-border: rgba(255, 255, 255, 0.10);
+
+  /* Nav bar */
+  --nav-bg: #0b0d11;
+  --nav-item-height: 56px;
+
+  /* Z-index layers */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 50;
+  --z-dropdown: 100;
+  --z-overlay: 200;
+  --z-modal: 300;
+  --z-popover: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+  --z-mouse-notify: 700;
+}

@@ -1,0 +1,9 @@
+node_modules
+out
+dist
+.screenshots
+data/
+appSettings.config
+*.log
+.eslintcache
+.DS_Store
