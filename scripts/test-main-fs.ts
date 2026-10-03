@@ -209,7 +209,7 @@ async function testImages(base: string): Promise<void> {
   } catch (e) {
     threw = (e as Error).message;
   }
-  check('reject > 256 px', /at most 256 px per side/.test(threw), threw);
+  check('reject > 256 px', /longest side cannot exceed 256px/.test(threw), threw);
   try {
     prepareImport(new Uint8Array([1, 2, 3, 4]), 'fake.png');
   } catch (e) {

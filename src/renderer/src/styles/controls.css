@@ -2,7 +2,7 @@
  * Generic controls. Components use these classes; component-scoped CSS only for truly specific layout.
  * Vocabulary:
  *   buttons     .btn .btn-primary .btn-danger .btn-ghost .btn-icon .btn-sm .btn-lg .btn-link .btn-group .is-active .is-loading
- *   inputs      .input .input-sm .input-number .input-mono .textarea .select .input-group .input-affix .input-affix-end .is-invalid
+ *   inputs      .input .input-sm .input-number .input-mono .input-color .textarea .select .input-group .input-affix .input-affix-end .is-invalid
  *   checkbox    .checkbox .checkbox-input .checkbox-label     range  .range (--fill)     .number-slider
  *   layout      .toolbar(.toolbar-bottom/.toolbar-plain/.toolbar-vertical) .toolbar-separator .toolbar-spacer
  *               .panel .panel-header .panel-body .section .section-header .section-body .group-title .divider
@@ -301,6 +301,31 @@
 .input-mono {
   font-family: var(--font-mono);
   font-size: var(--font-size-sm);
+}
+
+/* Colour swatch: a native <input type="color"> sized like a small control */
+.input-color {
+  flex: 0 0 auto;
+  width: 28px;
+  height: var(--control-height-sm);
+  padding: 2px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-sm);
+  background: var(--control-bg);
+  cursor: pointer;
+}
+
+.input-color:hover:not(:disabled) {
+  border-color: var(--control-border-hover);
+}
+
+.input-color::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.input-color::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
 }
 
 .textarea {

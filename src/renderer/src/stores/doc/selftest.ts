@@ -16,7 +16,7 @@ import { toasts } from '../../services/toasts';
 import { GC_DELAY_MS, useDocumentsStore } from '../documents';
 import { useSettingsStore } from '../settings';
 import { installDocumentShortcuts, restoreWorkspace, useTabsStore } from '../tabs';
-import { useWorkspaceStore } from '../workspace';
+import { parseWorkspace, useWorkspaceStore } from '../workspace';
 import type { DocHandle } from '../types';
 import { deps } from './deps';
 import { IoQueue } from './ioQueue';
@@ -133,6 +133,19 @@ async function main(): Promise<void> {
   const tabs = useTabsStore();
   const workspace = useWorkspaceStore();
   await workspace.whenLoaded();
+
+  section('workspace display (ghost frames)');
+  {
+    const d = workspace.state;
+    const parsed = (display: unknown): { showGhosts: boolean; ghostCount: number } => parseWorkspace({ display }, d).display;
+    check('defaults: ghosts off, count 1', !d.display.showGhosts && d.display.ghostCount === 1 && parsed(undefined).ghostCount === 1);
+    check('saved toggle and count restored', parsed({ showGhosts: true, ghostCount: 4 }).showGhosts && parsed({ ghostCount: 4 }).ghostCount === 4);
+    check('count rounded and clamped to 0..15', parsed({ ghostCount: 2.6 }).ghostCount === 3 && parsed({ ghostCount: 99 }).ghostCount === 15 && parsed({ ghostCount: -2 }).ghostCount === 0);
+    check('malformed values fall back', parsed({ showGhosts: 'yes', ghostCount: '4' }).ghostCount === 1 && !parsed({ showGhosts: 'yes' }).showGhosts && parsed({ ghostCount: null }).ghostCount === 1);
+    const color = (v: unknown): string => parseWorkspace({ display: { ghostColor: v } }, d).display.ghostColor;
+    check('ghost colour: default, restored lower-cased, malformed falls back',
+      d.display.ghostColor === '#874040' && color('#FF8800') === '#ff8800' && color('red') === '#874040' && color('#ff880') === '#874040' && color(42) === '#874040');
+  }
 
   section('load + save round trip');
   const walk = await documents.load(WALK) as DocInternal;

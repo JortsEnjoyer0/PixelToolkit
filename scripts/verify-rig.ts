@@ -22,7 +22,7 @@ import { HEAD_TILT_KEEP, calibrate, cocoResidual, forceNeck, type CalibrateResul
 import { lift, type LiftResult } from '../src/renderer/src/core/rig/lift';
 import { mirrorCalibration, mirrorCoco, mirrorPose } from '../src/renderer/src/core/rig/mirror';
 import { formatJson, parseAnimation, serializeAnimation, createAnimationMeta, type Projection, type RigCalibration } from '../src/renderer/src/core/model';
-import { metaFromState, newFrame, stateFromMeta, withCamera, withEstimate, withFrames, withReferenceImage } from '../src/renderer/src/core/docState';
+import { ghostPoses, metaFromState, newFrame, stateFromMeta, withCamera, withEstimate, withFrames, withReferenceImage } from '../src/renderer/src/core/docState';
 import { buildGeneration } from '../src/renderer/src/core/generate';
 
 let failures = 0;
@@ -770,6 +770,20 @@ section('Model, document and generate contract paths');
   const meta = createAnimationMeta({ direction: 'east', view: 'high top-down' });
   const again = parseAnimation(JSON.parse(formatJson(serializeAnimation(meta))));
   check('serialize → parse round trip', formatJson(serializeAnimation(again)) === formatJson(serializeAnimation(meta)));
+}
+{
+  // Onion skin: up to N committed poses right before the target, oldest first, no wrap-around
+  const st = withFrames(stateFromMeta(createAnimationMeta({ direction: 'south' })), [0, 1, 2, 3, 4].map(() => newFrame(idlePose(tCalib))));
+  const fr = st.frames;
+  const at = (k: number): { kind: 'frame'; uid: string } => ({ kind: 'frame', uid: fr[k].uid });
+  const same = (got: readonly unknown[], want: number[]): boolean => got.length === want.length && want.every((k, j) => got[j] === fr[k].pose);
+  check('ghostPoses: REF and frame 1 have none', ghostPoses(st, { kind: 'ref' }, 3).length === 0 && ghostPoses(st, at(0), 3).length === 0);
+  check('ghostPoses: count 0, NaN or an unknown frame → none', ghostPoses(st, at(3), 0).length === 0 && ghostPoses(st, at(3), NaN).length === 0 && ghostPoses(st, { kind: 'frame', uid: 'gone' }, 2).length === 0);
+  check('ghostPoses: frame 3, count 1 → frame 2', same(ghostPoses(st, at(2), 1), [1]));
+  check('ghostPoses: frame 3, count 2 → frames 1, 2 (oldest first)', same(ghostPoses(st, at(2), 2), [0, 1]));
+  check('ghostPoses: frame 5, count 3 → frames 2, 3, 4', same(ghostPoses(st, at(4), 3), [1, 2, 3]));
+  check('ghostPoses: count past frame 1 stops there (no wrap-around)', same(ghostPoses(st, at(2), 15), [0, 1]) && same(ghostPoses(st, at(4), 15), [0, 1, 2, 3]));
+  check('ghostPoses: the committed pose objects (no copies)', ghostPoses(st, at(1), 1)[0] === fr[0].pose);
 }
 for (const fx of fixtures) {
   const animMeta = createAnimationMeta({ direction: fx.direction, canvas: fx.canvas, action: 'walk' });

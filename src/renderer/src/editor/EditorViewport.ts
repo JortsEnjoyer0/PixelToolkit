@@ -2,8 +2,9 @@
 // testbed drive this same class through IEditorViewport + DocSource.
 //
 // Rendering is on demand: invalidate() schedules one rAF (drags call it on every change), and frames keep coming while
-// the camera damps or fly keys are held. Draw order: floor + image plane, renderer.clearDepth(), then skeleton, COCO
-// overlay and the gizmo helper, so the skeleton is always on top of the image.
+// the camera damps or fly keys are held. Draw order: floor + image plane, renderer.clearDepth(), then the foreground
+// scene (one shared RigLights; the onion-skin ghosts, each ending in a depth reset; the skeleton), the COCO overlay and
+// the gizmo helper, so the skeleton is always on top of the image and of the ghosts.
 //
 // Pointer gestures are decided by a capture-phase pointerdown arbiter that runs before TransformControls and OrbitControls:
 // gizmo axis under the pointer → gizmo drag; a joint / bone (or COCO handle) → select (orbit off until pointerup);
@@ -11,7 +12,7 @@
 import * as THREE from 'three';
 import { SKELETON_LABELS } from '@shared/pixellab';
 import type { BoneName, FrameTarget, Pose, UndoableState, Vec3 } from '../core/model';
-import { referencedImages, sameTarget, targetPose } from '../core/docState';
+import { ghostPoses, referencedImages, sameTarget, targetPose } from '../core/docState';
 import { COCO, humanLabel } from '../core/rig/coco';
 import { cocoFromFk, createFkResult, fk } from '../core/rig/fk';
 import { clonePose } from '../core/rig/poses';
@@ -19,18 +20,21 @@ import { alignedView, cameraBasis } from '../core/rig/projection';
 import { BONE_INDEX, BONES, HUMAN_NAMES } from '../core/rig/rigDef';
 import { CameraRig, CLICK_SLOP, type FlyKey } from './CameraRig';
 import { CocoView } from './CocoView';
+import { GhostView } from './GhostView';
 import { GizmoController, type GizmoAxis } from './GizmoController';
 import { Picker, type RigHit } from './Picker';
 import { ProjectionPlane } from './ProjectionPlane';
+import { RigLights, createRigGeometries, disposeRigGeometries, type RigGeometries } from './RigMeshes';
 import { SkeletonView } from './SkeletonView';
 import { DocTextureCache, createAnchorTexture, createDiscTexture, createRingTexture } from './textures';
 import {
-  DEFAULT_DISPLAY, type DisplayOptions, type DocSource, type EditorEventName, type EditorEvents, type IEditorViewport, type ViewState
+  DEFAULT_DISPLAY, sanitizeGhostColor, sanitizeGhostCount, type DisplayOptions, type DocSource, type EditorEventName, type EditorEvents, type IEditorViewport,
+  type ViewState
 } from './types';
 
 const CLEAR_COLOR = 0x0a0c10;
-/** A track frame without its own image shows the reference image ghosted. */
-const GHOST_OPACITY = 0.35;
+/** A track frame without its own image shows the reference image faded. */
+const STAND_IN_OPACITY = 0.35;
 
 const FLY_CODES: Readonly<Record<string, FlyKey>> = {
   KeyW: 'forward', KeyS: 'back', KeyA: 'left', KeyD: 'right', Space: 'up', KeyC: 'down'
@@ -89,6 +93,9 @@ export class EditorViewport implements IEditorViewport {
   private gizmo!: GizmoController;
   private plane!: ProjectionPlane;
   private skeleton!: SkeletonView;
+  private ghosts!: GhostView;
+  private lights!: RigLights;
+  private rigGeo: RigGeometries | null = null;
   private coco!: CocoView;
   private picker = new Picker();
   private bgScene = new THREE.Scene();
@@ -113,6 +120,8 @@ export class EditorViewport implements IEditorViewport {
 
   private fkr = createFkResult();
   private hasPose = false;
+  /** Inputs of the shown ghosts (states are immutable, so identity means unchanged content). */
+  private ghostKey: { state: UndoableState | null; target: FrameTarget; count: number } = { state: null, target: REF, count: 0 };
   private selected = -1;
   private hover = -1;
   private cocoHover = -1;
@@ -165,10 +174,13 @@ export class EditorViewport implements IEditorViewport {
     this.discTex = createDiscTexture();
     this.ringTex = createRingTexture();
     this.plane = new ProjectionPlane();
-    this.skeleton = new SkeletonView(this.anchorTex);
+    this.rigGeo = createRigGeometries();
+    this.lights = new RigLights();
+    this.ghosts = new GhostView(this.rigGeo);
+    this.skeleton = new SkeletonView(this.anchorTex, this.rigGeo);
     this.coco = new CocoView(this.discTex, this.ringTex);
     this.bgScene.add(this.plane.group);
-    this.fgScene.add(this.skeleton.group);
+    this.fgScene.add(this.lights.group, this.ghosts.group, this.skeleton.group);
     this.cocoScene.add(this.coco.group);
 
     this.rig = new CameraRig({
@@ -261,6 +273,11 @@ export class EditorViewport implements IEditorViewport {
       this.rig.dispose();
       this.plane.dispose();
       this.skeleton.dispose();
+      this.ghosts.dispose();
+      this.lights.dispose();
+      if (this.rigGeo)
+        disposeRigGeometries(this.rigGeo);
+      this.rigGeo = null;
       this.coco.dispose();
       this.anchorTex?.dispose();
       this.discTex?.dispose();
@@ -271,6 +288,8 @@ export class EditorViewport implements IEditorViewport {
     }
     this.renderer = null;
     this.src = null;
+    this.state = null;
+    this.ghostKey = { state: null, target: REF, count: 0 };
     for (const set of Object.values(this.handlers))
       set.clear();
   }
@@ -311,6 +330,7 @@ export class EditorViewport implements IEditorViewport {
     if (!src) {
       this.hasPose = false;
       this.skeleton?.setPose(null, null);
+      this.updateGhosts();
       this.coco?.update(null);
       this.plane?.setCanvas(null);
       this.plane?.setTexture(null);
@@ -435,11 +455,26 @@ export class EditorViewport implements IEditorViewport {
     if (pose && s)
       fk(pose, s.rig, this.fkr);
     this.skeleton.setPose(this.hasPose ? this.fkr : null, s?.rig ?? null);
+    this.updateGhosts();
     this.coco.update(this.displayCoco());
     this.coco.setEditMode(this.cocoEditActive());
     this.updateStyle();
     if (!this.drag)
       this.attachGizmo();
+  }
+
+  /** Onion skin: FK for the ghosts only when the state, the shown frame or the ghost count changed (never during a drag). */
+  private updateGhosts(): void {
+    if (!this.renderer)
+      return;
+    const s = this.state;
+    const t = this.effectiveTarget();
+    const count = s && this.display.showGhosts ? this.display.ghostCount : 0;
+    const k = this.ghostKey;
+    if (k.state === s && k.count === count && sameTarget(k.target, t))
+      return;
+    this.ghostKey = { state: s, target: t, count };
+    this.ghosts.setPoses(s && count > 0 ? ghostPoses(s, t, count) : [], s?.rig ?? null);
   }
 
   private updateImage(): void {
@@ -456,7 +491,7 @@ export class EditorViewport implements IEditorViewport {
       if (f?.image)
         uid = f.image;
       else
-        opacity = GHOST_OPACITY;
+        opacity = STAND_IN_OPACITY;
     }
     const tex = uid ? this.caches.get(this.src.id)?.get(uid) ?? null : null;
     this.plane.setTexture(tex, opacity);
@@ -474,6 +509,8 @@ export class EditorViewport implements IEditorViewport {
   setDisplay(opts: Partial<DisplayOptions>): void {
     const prev = this.display;
     const next: DisplayOptions = { ...prev, ...opts };
+    next.ghostCount = sanitizeGhostCount(next.ghostCount, prev.ghostCount);
+    next.ghostColor = sanitizeGhostColor(next.ghostColor, prev.ghostColor);
     let forced = false;
     if (next.cocoEdit && !this.isRefTarget()) {
       next.cocoEdit = false; // REF only: the caller jumps to REF first
@@ -506,6 +543,7 @@ export class EditorViewport implements IEditorViewport {
     this.plane.setShowImage(d.showFrameImage);
     this.coco.setVisible(d.showCoco || this.cocoEditActive());
     this.skeleton.setShown(d.showSkeleton);
+    this.ghosts.setColor(d.ghostColor);
     this.gizmo.setSpace(d.gizmoSpace);
     this.rig.setOrtho(d.ortho);
     this.updateImage();
@@ -988,7 +1026,9 @@ export class EditorViewport implements IEditorViewport {
     const cam = this.rig.camera;
     cam.updateMatrixWorld();
     const target = this.rig.orbit?.target ?? this.v1.set(0, 0.5, 0);
-    this.skeleton.layout(cam, this.rig, target);
+    this.lights.update(cam, target);
+    this.ghosts.layout(this.rig);
+    this.skeleton.layout(cam, this.rig);
     r.clear();
     r.render(this.bgScene, cam);
     r.clearDepth();

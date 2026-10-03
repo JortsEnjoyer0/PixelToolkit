@@ -1,14 +1,15 @@
 // Workspace store (WorkspaceStoreApi, PLAN §5 Workspace): data/.ptk/workspace.json holds the open tabs, the active tab,
-// explorer expansion and width, the frame-track thumbnail height and the editor toolbar toggles. It is read once when
-// the store is created and written debounced (createDirs, since .ptk may not exist yet). Nothing is written before the
-// read finished, so early update() calls never clobber the file; they are merged on top of it instead.
+// explorer expansion and width, the frame-track thumbnail height and the editor toolbar toggles (with the ghost frame
+// count). It is read once when the store is created and written debounced (createDirs, since .ptk may not exist yet).
+// Nothing is written before the read finished, so early update() calls never clobber the file; they are merged on top
+// of it instead.
 // restoreWorkspace() (reopening the saved tabs) lives in stores/tabs.ts.
 import { defineStore } from 'pinia';
 import { onScopeDispose, ref, shallowRef } from 'vue';
 import { WORKSPACE_REL } from '@shared/dataPaths';
 import { isObj, plainCopy } from '@shared/json';
 import { deepFreeze } from '../core/util/freeze';
-import { DEFAULT_DISPLAY, type DisplayOptions } from '../editor/types';
+import { DEFAULT_DISPLAY, sanitizeGhostColor, sanitizeGhostCount, type DisplayOptions } from '../editor/types';
 import { useSettingsStore } from './settings';
 import type { WorkspaceState, WorkspaceStoreApi } from './types';
 
@@ -47,6 +48,9 @@ function parseDisplay(v: unknown, d: DisplayOptions): DisplayOptions {
     showFrameImage: bool('showFrameImage'),
     showCoco: bool('showCoco'),
     showSkeleton: bool('showSkeleton'),
+    showGhosts: bool('showGhosts'),
+    ghostCount: sanitizeGhostCount(raw.ghostCount, d.ghostCount),
+    ghostColor: sanitizeGhostColor(raw.ghostColor, d.ghostColor),
     cocoEdit: false,
     gizmoMode: raw.gizmoMode === 'translate' ? 'translate' : 'rotate',
     gizmoSpace: raw.gizmoSpace === 'world' ? 'world' : 'local',

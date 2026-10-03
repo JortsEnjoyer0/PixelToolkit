@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import type { FkResult } from '../core/rig/fk';
 import { BONE_INDEX, BONES, END_SITES } from '../core/rig/rigDef';
-import { tailPosition } from './SkeletonView';
+import { tailPosition } from './RigMeshes';
 
 /** Joint hit radius and bone (segment) hit distance, CSS px. */
 export const JOINT_PICK_PX = 8;

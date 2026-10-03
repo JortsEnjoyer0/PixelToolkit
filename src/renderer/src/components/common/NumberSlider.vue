@@ -2,7 +2,9 @@
 // Range slider + number entry. v-model updates live (slider drag, valid typing, arrow keys); 'commit' fires once per
 // finished edit: slider change (release / key), Enter or blur in the field. Undo-coalescing callers apply on
 // update:modelValue with a mergeKey and seal on commit. Values are clamped to [min, max] and snapped to step.
-// Field keys: Up / Down step (Shift ×10), Enter commits, Escape reverts to the value at focus.
+// Field keys: Up / Down step (Shift ×10), Enter commits, Escape reverts to the value at focus. With `wheel`, the mouse
+// wheel over the field steps too: one step per notch, small touchpad deltas add up, Ctrl + wheel ignored (each step
+// commits unless the field is being edited).
 import { computed, ref, watch } from 'vue';
 import { clamp } from '../../core/util/math';
 
@@ -21,6 +23,8 @@ const props = withDefaults(defineProps<{
   size?: 'sm' | 'md';
   /** Accessible name of both inputs (when no visible <label> points at them). */
   label?: string;
+  /** The mouse wheel over the number field steps the value (Shift ×10). */
+  wheel?: boolean;
 }>(), { step: 1, slider: true, size: 'md' });
 
 const emit = defineEmits<{ 'update:modelValue': [value: number]; commit: [value: number] }>();
@@ -131,11 +135,45 @@ function onKeydown(e: KeyboardEvent): void {
     input.select();
   } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
     e.preventDefault();
-    const base = Number.isFinite(parse(text.value)) ? parse(text.value) : last;
-    const delta = (e.key === 'ArrowUp' ? 1 : -1) * props.step * (e.shiftKey ? 10 : 1);
-    update(base + delta);
-    text.value = format(last);
+    stepFrom(e.key === 'ArrowUp' ? 1 : -1, e.shiftKey);
   }
+}
+
+/** One step up or down from the typed value (Shift ×10). */
+function stepFrom(dir: 1 | -1, big: boolean): void {
+  const typed = parse(text.value);
+  update((Number.isFinite(typed) ? typed : last) + dir * props.step * (big ? 10 : 1));
+  text.value = format(last);
+}
+
+/** Wheel distance (px) not yet turned into a step, and the time of the last wheel event. */
+let wheelAcc = 0;
+let wheelAt = 0;
+/** Wheel distance per step: one mouse notch (~100 px) steps once, touchpad / free-spin deltas add up to it. */
+const WHEEL_STEP_PX = 50;
+
+function onWheel(e: WheelEvent): void {
+  // Ctrl + wheel (and a touchpad pinch, which arrives as one) never steps
+  if (!props.wheel || props.disabled || e.ctrlKey)
+    return;
+  const d = e.deltaY || e.deltaX; // Shift + wheel scrolls horizontally on some platforms
+  if (d === 0)
+    return;
+  e.preventDefault();
+  const px = e.deltaMode === 1 ? d * 40 : e.deltaMode === 2 ? d * 800 : d;
+  // A pause or a direction change drops the leftover
+  if (e.timeStamp - wheelAt > 200 || Math.sign(px) !== Math.sign(wheelAcc))
+    wheelAcc = 0;
+  wheelAt = e.timeStamp;
+  wheelAcc += px;
+  if (Math.abs(wheelAcc) < WHEEL_STEP_PX)
+    return;
+  // At most one step per event, so a large notch delta never skips values
+  const dir = wheelAcc < 0 ? 1 : -1;
+  wheelAcc = 0;
+  stepFrom(dir, e.shiftKey);
+  if (!editing.value)
+    commit();
 }
 
 function onBlur(): void {
@@ -174,6 +212,7 @@ function onBlur(): void {
       @focus="onFocus"
       @input="onInput"
       @keydown="onKeydown"
+      @wheel="onWheel"
       @blur="onBlur"
     >
   </div>

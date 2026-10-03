@@ -38,6 +38,18 @@ export function targetPose(state: UndoableState, target: FrameTarget): Readonly<
   return state.frames.find((f) => f.uid === target.uid)?.pose ?? null;
 }
 
+/**
+ * Onion skin: the poses of up to `count` track frames right before `target`, oldest first (the frame just before the
+ * target comes last). No wrap-around: REF, frame 1, an unknown frame or count < 1 → [].
+ */
+export function ghostPoses(state: UndoableState, target: FrameTarget, count: number): Readonly<Pose>[] {
+  const n = Math.floor(count);
+  const i = target.kind === 'frame' ? frameIndex(state, target.uid) : -1;
+  if (i <= 0 || !(n >= 1))
+    return [];
+  return state.frames.slice(Math.max(0, i - n), i).map((f) => f.pose);
+}
+
 /** Animation-owned image uids a state references (reference image + frame images), deduplicated. For GC live sets, renames, duplicates. */
 export function referencedImages(state: UndoableState): string[] {
   const out = new Set<string>();

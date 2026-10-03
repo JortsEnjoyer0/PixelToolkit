@@ -3,6 +3,7 @@
 // Left: controls and readouts; right: the viewport with its align button overlay.
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { CAMERA_VIEWS, VIEW_PITCH, type CameraView, type Direction } from '@shared/pixellab';
+import NumberSlider from '../components/common/NumberSlider.vue';
 import type { BoneName, FrameTarget, Pose, UndoableState, Vec3 } from '../core/model';
 import { frameIndex, newFrame, sameTarget, targetPose, withCamera, withEstimate, withFrames, withTargetPose, type EstimateReport } from '../core/docState';
 import { SKELETON_LABELS } from '../core/rig/coco';
@@ -10,7 +11,7 @@ import { DEG, qFromAxisAngle, qMul } from '../core/rig/math';
 import { clonePose } from '../core/rig/poses';
 import { createProjectScratch, projectCocoForDisplay, projectPoseForDisplay, type DisplayProjection } from '../core/rig/projection';
 import { EditorViewport } from '../editor/EditorViewport';
-import { DEFAULT_DISPLAY, type DisplayOptions } from '../editor/types';
+import { DEFAULT_DISPLAY, GHOST_COUNT_MAX, type DisplayOptions } from '../editor/types';
 import { FIXTURES } from './fixtures';
 import { drawFramePreview } from './preview2d';
 import { buildFixtureDoc, type TestbedDoc } from './testbedDoc';
@@ -20,11 +21,12 @@ const COMPASS: readonly (Direction | null)[] = ['north-west', 'north', 'north-ea
 const COMPASS_LABEL: Readonly<Record<Direction, string>> = {
   'north-west': 'NW', north: 'N', 'north-east': 'NE', west: 'W', east: 'E', 'south-west': 'SW', south: 'S', 'south-east': 'SE'
 };
-const TOGGLES: readonly { key: 'showFloor' | 'showFrameImage' | 'showCoco' | 'showSkeleton' | 'cocoEdit' | 'ortho'; label: string }[] = [
+const TOGGLES: readonly { key: 'showFloor' | 'showFrameImage' | 'showCoco' | 'showSkeleton' | 'showGhosts' | 'cocoEdit' | 'ortho'; label: string }[] = [
   { key: 'showFloor', label: 'Floor' },
   { key: 'showFrameImage', label: 'Frame image' },
   { key: 'showCoco', label: 'OpenPose overlay' },
   { key: 'showSkeleton', label: 'Skeleton' },
+  { key: 'showGhosts', label: 'Ghost frames (onion skin)' },
   { key: 'cocoEdit', label: 'OpenPose edit (REF only)' },
   { key: 'ortho', label: 'Orthographic' }
 ];
@@ -470,6 +472,26 @@ const fmtE = (n: number | undefined): string => n === undefined || !Number.isFin
           >
           {{ t.label }}
         </label>
+        <div class="tb-row">
+          <span class="tb-key">Ghosts</span>
+          <NumberSlider
+            class="tb-range"
+            :model-value="display.ghostCount"
+            :min="0"
+            :max="GHOST_COUNT_MAX"
+            size="sm"
+            wheel
+            label="Number of ghost frames"
+            @update:model-value="setDisplay({ ghostCount: $event })"
+          />
+          <input
+            type="color"
+            class="input-color"
+            :value="display.ghostColor"
+            aria-label="Ghost color"
+            @input="setDisplay({ ghostColor: ($event.target as HTMLInputElement).value })"
+          >
+        </div>
         <div class="tb-row">
           <span class="tb-key">Gizmo</span>
           <div class="tb-seg">

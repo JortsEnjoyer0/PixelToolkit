@@ -1,6 +1,7 @@
 // Editor contracts (PLAN §6 Editor). editor/ is three.js, non-reactive, and imports no stores: the app (EditorPane)
 // and the testbed drive the same EditorViewport class through these interfaces.
 import type { BoneName, FrameTarget, Pose, UndoableState, Vec3 } from '../core/model';
+import { clamp } from '../core/util/math';
 
 /** What the viewport reads and writes. Implemented by EditorPane (from a DocHandle) and by the testbed. */
 export interface DocSource {
@@ -43,6 +44,12 @@ export interface DisplayOptions {
   showCoco: boolean;
   /** Our rig skeleton (bones, joints, anchor). Hidden: no rig picking and no gizmo. */
   showSkeleton: boolean;
+  /** Onion skin: our rig at 35 % opacity for the `ghostCount` track frames before the shown one (independent of showSkeleton; never picked). */
+  showGhosts: boolean;
+  /** Ghost frames shown while showGhosts is on: an integer in 0..GHOST_COUNT_MAX. */
+  ghostCount: number;
+  /** Ghost tint, '#rrggbb' (bones; joints a little lighter, end sites a little darker). */
+  ghostColor: string;
   /** COCO edit mode: REF only; picking switches to COCO points (NECK excluded). */
   cocoEdit: boolean;
   /** 'translate' only applies to Hips; other bones are rotate-only. */
@@ -52,9 +59,24 @@ export interface DisplayOptions {
   ortho: boolean;
 }
 
+/** Default ghost tint (a muted red, distinct from the blue-grey active skeleton). */
+export const DEFAULT_GHOST_COLOR = '#874040';
+
 export const DEFAULT_DISPLAY: Readonly<DisplayOptions> = {
-  showFloor: true, showFrameImage: true, showCoco: true, showSkeleton: true, cocoEdit: false, gizmoMode: 'rotate', gizmoSpace: 'local', ortho: true
+  showFloor: true, showFrameImage: true, showCoco: true, showSkeleton: true, showGhosts: false, ghostCount: 1,
+  ghostColor: DEFAULT_GHOST_COLOR, cocoEdit: false, gizmoMode: 'rotate', gizmoSpace: 'local', ortho: true
 };
+
+/** Most ghost frames the onion skin shows. */
+export const GHOST_COUNT_MAX = 15;
+
+/** A valid DisplayOptions.ghostCount: rounded and clamped to 0..GHOST_COUNT_MAX; a non-number or NaN → `fallback`. */
+export const sanitizeGhostCount = (v: unknown, fallback: number): number =>
+  typeof v === 'number' && Number.isFinite(v) ? clamp(Math.round(v), 0, GHOST_COUNT_MAX) : fallback;
+
+/** A valid DisplayOptions.ghostColor: '#rrggbb' lower-cased; anything else → `fallback`. */
+export const sanitizeGhostColor = (v: unknown, fallback: string): string =>
+  typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : fallback;
 
 export interface EditorEvents {
   /** Bone selection changed (clicking a joint selects the bone whose head it is). */
