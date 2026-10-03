@@ -1,4 +1,4 @@
-// Data-root-relative path conventions (PLAN §3). POSIX separators, no leading slash.
+// Data-root-relative path conventions (docs/architecture.md "Data root and files"). POSIX separators, no leading slash.
 //   folder:     "Townsfolk"
 //   character:  charRel = "Townsfolk/Merchant" (dir); meta = charRel + ".json"; base images "base.<uid>.png" inside
 //   animation:  animRel = "Townsfolk/Merchant/Walk South.json"; images "<animName>.<uid>.png" beside it
@@ -10,10 +10,10 @@ export const WORKSPACE_REL = '.ptk/workspace.json';
 export const SESSION_CREATED_REL = '.ptk/session-created.json';
 
 /**
- * SESSION_CREATED_REL contents (crash-safe image GC, PLAN §5): data-root-relative image files main wrote this session
- * (base / reference imports, copies). A file left over from a crashed session is deleted at startup unless its owner
- * json (or the jobs journal) references its uid. The owner follows from the name: "base.<uid>.png" → the character
- * json, "<anim>.<uid>.png" → "<anim>.json".
+ * SESSION_CREATED_REL contents (the session sweep, docs/architecture.md "Data root and files"): data-root-relative
+ * image files main wrote this session (base / reference imports, copies). A file left over from a crashed session is
+ * deleted at startup unless its owner json (or the jobs journal) references its uid. The owner follows from the name:
+ * "base.<uid>.png" → the character json, "<anim>.<uid>.png" → "<anim>.json".
  */
 export interface SessionCreatedList {
   version: 1;

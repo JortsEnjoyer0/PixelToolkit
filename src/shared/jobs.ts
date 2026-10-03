@@ -76,7 +76,7 @@ export interface SubmitAnimateInput {
   snapshot: SubmittedSnapshot;
 }
 
-/** Main-side check of untrusted submit input (R8 request rules plus the record invariants). Empty when valid. */
+/** Main-side check of untrusted submit input (validateAnimateRequest plus the record invariants). Empty when valid. */
 export function validateSubmitInput(input: SubmitAnimateInput): string[] {
   const v: unknown = input;
   if (!v || typeof v !== 'object')

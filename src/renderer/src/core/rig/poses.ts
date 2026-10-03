@@ -26,7 +26,7 @@ function lowestFootY(calib: RigCalibration): number {
 /** Hips height that puts the lowest rest foot point on the floor (Y = 0). */
 export const restRootHeight = (calib: RigCalibration): number => -lowestFootY(calib);
 
-/** H_char: rest HeadTop.y minus the lowest foot/toe y (PLAN §4.4 step 7). */
+/** H_char: rest HeadTop.y minus the lowest foot/toe y (docs/skelanim/rig.md "Rig"). */
 export function calibrationHeight(calib: RigCalibration): number {
   let top = 0;
   for (const k of HEAD_CHAIN)

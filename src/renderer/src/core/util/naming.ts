@@ -1,5 +1,6 @@
-// Entity names (folders, characters, animations) map 1:1 to Windows file names (PLAN §3 Names). The name rules are
-// shared with main (@shared/names); this adds the sibling checks.
+// Entity names (folders, characters, animations) map 1:1 to Windows file names
+// (docs/architecture.md "Data root and files"). The name rules are shared with main (@shared/names); this adds the
+// sibling checks.
 import { MAX_NAME_LENGTH, nameProblem } from '@shared/names';
 import { sameRel } from './relPath';
 

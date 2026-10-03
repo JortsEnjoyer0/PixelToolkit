@@ -1,8 +1,8 @@
 <script setup lang="ts">
-// Editor toolbar (PLAN §6 Editor): display toggles (floor, frame image, OpenPose overlay, rig skeleton, ghost frames with
-// their count and colour), OpenPose (COCO) point edit (REF only), gizmo mode (Move only applies to Hips) and space, ortho /
-// perspective, and Reset pose to the reference (undoable). Pure view: EditorPane owns the viewport and applies the
-// emitted changes.
+// Editor toolbar (docs/skelanim/skelanim.md "UI"): display toggles (floor, frame image, OpenPose overlay, rig skeleton,
+// ghost frames with their count and colour), OpenPose (COCO) point edit (REF only), gizmo mode (Move only applies to
+// Hips) and space, ortho / perspective, and Reset pose to the reference (undoable). Pure view: EditorPane owns the
+// viewport and applies the emitted changes.
 import { computed } from 'vue';
 import { Bone, Box, Ghost, Globe, Grid3x3, Image, Move3d, Orbit, PenLine, Rotate3d, RotateCcw, Spline, Square } from '@lucide/vue';
 import IconButton from '../../../components/common/IconButton.vue';

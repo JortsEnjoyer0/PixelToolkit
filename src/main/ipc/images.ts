@@ -1,5 +1,5 @@
-// PNG import and copies (PLAN §3 Images). The dialog lives here; validation, padding, the atomic write and the
-// session-created record live in core/imageImport.ts.
+// PNG import and copies (docs/architecture.md "Data root and files"). The dialog lives here; validation, padding, the
+// atomic write and the session-created record live in core/imageImport.ts.
 import { app, BrowserWindow, dialog, type IpcMainInvokeEvent, type OpenDialogOptions } from 'electron';
 import path from 'node:path';
 import { IPC, type ImportedImage } from '../../shared/api';

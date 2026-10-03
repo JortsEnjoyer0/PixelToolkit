@@ -1,4 +1,4 @@
-// Left ↔ right mirroring across the X = 0 plane (tests and future use; PLAN §4 / critique item 21).
+// Left ↔ right mirroring across the X = 0 plane (tests and future use; docs/skelanim/rig.md "Coordinates").
 // Positions p → (−x, y, z); rotations q → (x, −y, −z, w); Left* ↔ Right* bones and face labels swap.
 // scripts/verify-rig.ts checks it (npm run test:rig).
 import { BONE_NAMES, END_SITE_NAMES, FACE_LABELS, type BoneName, type FaceLabel, type Pose, type Quat, type Vec3 } from '@shared/pose';

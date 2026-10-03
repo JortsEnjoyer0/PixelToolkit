@@ -1,4 +1,5 @@
-// JSON text format for every file the app writes (PLAN §3): 2-space pretty print, numeric arrays on one line.
+// JSON text format for every file the app writes (docs/architecture.md "Data root and files"): 2-space pretty print,
+// numeric arrays on one line.
 // Also the small guards every reader of untrusted JSON (files, IPC, PixelLab answers) needs.
 
 /** A parsed JSON object. */

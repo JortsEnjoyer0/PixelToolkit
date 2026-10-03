@@ -1,7 +1,7 @@
 // Onion skin (toolbar "Ghost frames"): the committed poses of the track frames before the shown one, drawn as our rig
-// (RigMeshes; not the OpenPose overlay, no images) at a uniform 35 % opacity under the active skeleton, tinted with the
-// toolbar's ghost colour (setColor). Display only:
-// the viewport hands it poses, so ghosts are never picked, never get the gizmo and never affect hover or the cursor.
+// (RigMeshes; not the OpenPose overlay, no images) at a uniform GHOST_OPACITY (below) under the active skeleton, tinted
+// with the toolbar's ghost colour (setColor). Display only: the viewport hands it poses, so ghosts are never picked,
+// never get the gizmo and never affect hover or the cursor.
 //
 // Each ghost reads as one flat layer: a depth-only pre-pass of its meshes (sharing their instance buffers and shader
 // programs, so the depths match exactly) and then the colour pass at LessEqual, so only its front-most surface blends:
@@ -18,7 +18,7 @@ import { RIG_COLOR, RigMeshes, type RigGeometries, type RigMesh, type ScreenScal
 import { DEFAULT_GHOST_COLOR, GHOST_COUNT_MAX } from './types';
 
 /** Every part of a ghost is drawn at this fraction of its normal opacity. */
-const GHOST_OPACITY = 0.35;
+const GHOST_OPACITY = 0.4;
 
 interface Tint { bone: number; joint: number; end: number }
 

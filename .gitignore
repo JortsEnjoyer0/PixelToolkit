@@ -7,3 +7,5 @@ appSettings.config
 *.log
 .eslintcache
 .DS_Store
+/archive
+/src/desktop.ini

@@ -2,7 +2,7 @@
 // The editor area (data-zone="editor"): EditorToolbar over the ONE EditorViewport of the app, which is mounted once and
 // re-pointed at the active doc (setDocument) instead of being recreated per tab. The viewport and everything three.js
 // stays out of Vue's reactivity (plain lets / Maps in setup); only small UI mirrors (display, selection, aligned)
-// are refs. Wiring (PLAN §5 / §6):
+// are refs. Wiring (docs/skelanim/skelanim.md "Documents" and "UI"):
 // - DocSource over the active DocHandle: commits become doc.apply() undo entries, images load from ptk-asset URLs that
 //   are resolved when requested (renames move the files);
 // - per-doc camera memory in a non-reactive Map<docId, ViewState>; the viewport forgets a doc when it unloads;

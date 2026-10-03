@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Settings dialog (PLAN §6 App shell). Opened with openSettings() → dialogs.open(SettingsDialog); emits
+// Settings dialog (docs/ui.md "Shell"). Opened with openSettings() → dialogs.open(SettingsDialog); emits
 // resolve(true) after a successful save, cancel otherwise. Secrets: the store holds SECRET_MASK for stored keys;
 // an untouched key is left out of the patch (kept), a removed one is sent as '' and a typed one replaces it.
 import { computed, onMounted, reactive, ref, useId } from 'vue';

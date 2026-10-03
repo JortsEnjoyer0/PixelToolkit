@@ -1,6 +1,7 @@
-// Generate (PLAN §6 / §7): preflight checks and the animate-with-skeleton-v3 request built from document state.
-// Pure: the panel uses generationProblems() for its status line and generationWarnings() in its confirm dialog, the
-// jobs store uses buildGeneration() and adds refImageRel + frameUids for api.jobs.submitAnimate().
+// Generate (docs/skelanim/skelanim.md "Estimate and generation flow"): preflight checks and the
+// animate-with-skeleton-v3 request built from document state. Pure: the panel uses generationProblems() for its status
+// line and generationWarnings() in its confirm dialog, the jobs store uses buildGeneration() and adds refImageRel +
+// frameUids for api.jobs.submitAnimate().
 import { MAX_ACTION_LENGTH, MAX_DESCRIPTION_LENGTH, MAX_FRAMES, MIN_FRAMES, type AnimateV3Request } from '@shared/pixellab';
 import type { SubmittedSnapshot } from '@shared/jobs';
 import type { BaseImage, UndoableState } from './model';
@@ -11,7 +12,7 @@ import { cameraBasis, projectPoseSequence } from './rig/projection';
 export const effectiveDescription = (state: UndoableState, characterDescription: string): string =>
   (state.description.trim() !== '' ? state.description : characterDescription).trim();
 
-/** User-facing reasons Generate cannot run yet (PLAN §6 preflight); empty when ready. */
+/** User-facing reasons Generate cannot run yet (the preflight); empty when ready. */
 export function generationProblems(state: UndoableState, characterDescription: string, opts: { hasApiKey: boolean }): string[] {
   const problems: string[] = [];
   const n = state.frames.length;
@@ -37,7 +38,7 @@ export function generationProblems(state: UndoableState, characterDescription: s
 }
 
 /**
- * Soft warnings for the cost confirm (Generate still runs, PLAN §6 keeps the skeleton on a new image): the skeleton was
+ * Soft warnings for the cost confirm (Generate still runs; a new reference image keeps the skeleton): the skeleton was
  * estimated for another reference image, or the reference's base image faces another direction than the animation.
  */
 export function generationWarnings(state: UndoableState, baseImages: readonly Pick<BaseImage, 'uid' | 'direction'>[]): string[] {

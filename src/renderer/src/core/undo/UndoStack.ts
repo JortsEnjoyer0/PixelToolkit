@@ -1,5 +1,5 @@
-// Generic state-list undo (PLAN §5): a list of immutable states plus an index. States are shared by reference
-// (copy-on-write), so an entry costs only what changed. Framework-free.
+// Generic state-list undo (docs/skelanim/skelanim.md "Documents"): a list of immutable states plus an index. States are
+// shared by reference (copy-on-write), so an entry costs only what changed. Framework-free.
 
 export interface UndoEntry<T> {
   /** Short action name shown as "Undo <label>" (the base entry's label is ''). */

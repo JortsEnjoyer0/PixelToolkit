@@ -1,5 +1,5 @@
-// Rig definition (PLAN §4.2): bones, parents, rest directions, bend normals, end sites, limb chains and the
-// chibi template (docs/research/research-reports.md rig-mapping §2.2 / §2.3, with the PLAN §4.4 clavicle fix).
+// Rig definition (docs/skelanim/rig.md "Rig"): bones, parents, rest directions, bend normals, end sites, limb chains
+// and the chibi template.
 // Canonical space: faces +Z, left = +X, Y up. Rest pose = T-pose with identity local rotations.
 import { BONE_NAMES, END_SITE_NAMES, type BoneName, type EndSiteName, type FaceLabel, type Vec3 } from '@shared/pose';
 import type { SkeletonLabel } from '@shared/pixellab';
@@ -93,9 +93,9 @@ export interface RigTemplate {
 }
 
 /**
- * Chibi pixel template, exactly 1.0 tall: HeadTop y = 1, toes on the floor (the research table's toe offset is
- * lowered by 0.01 for that). Offsets = head offset from the parent head in the parent's rest frame. Clavicle heads
- * sit at (±0.2·halfShoulder, neckLen, 0) above UpperChest so rest COCO NECK (UpperArm midpoint) = Neck head (§4.4).
+ * Chibi pixel template, exactly 1.0 tall: HeadTop y = 1, toes on the floor (Toes offset y = −ankleHeight). Offsets =
+ * head offset from the parent head in the parent's rest frame. Clavicle heads sit at (±0.2·halfShoulder, neckLen, 0)
+ * above UpperChest so rest COCO NECK (UpperArm midpoint) = Neck head.
  */
 export const TEMPLATE: Readonly<RigTemplate> = {
   root: [0, 0.35, 0],
@@ -166,7 +166,7 @@ export const HUMAN_NAMES: Readonly<Record<BoneName, string>> = {
   RightToes: 'Right Toes'
 };
 
-/** Where each COCO point comes from in cocoFromFk (PLAN §4.3). */
+/** Where each COCO point comes from in cocoFromFk (docs/skelanim/rig.md "COCO-18 mapping"). */
 export type CocoSource = { kind: 'bone'; bone: BoneName } | { kind: 'neck' } | { kind: 'face' };
 
 export const JOINT_FOR_COCO: Readonly<Record<SkeletonLabel, CocoSource>> = {

@@ -93,7 +93,7 @@ function createWindow(): void {
     if (!(is.dev && devUrl && url.startsWith(devUrl)))
       e.preventDefault();
   });
-  // No application menu (PLAN §1), so devtools get their own key in dev only
+  // No application menu, so devtools get their own key in dev only
   if (is.dev) {
     win.webContents.on('before-input-event', (e, input) => {
       if (input.type === 'keyDown' && input.key === 'F12' && !input.control && !input.alt && !input.meta && !input.shift) {
@@ -106,7 +106,7 @@ function createWindow(): void {
   loadRenderer(win);
 }
 
-/** Session-created image sweep (PLAN Phase 1 outcomes). Never throws: a failed sweep is retried at the next start. */
+/** Session-created image sweep (core/sessionCreated.ts). Never throws: a failed sweep is retried at the next start. */
 async function sweepSessionImages(when: string): Promise<void> {
   try {
     const r = await sweepSessionCreated(jobReferencedUids());
@@ -170,7 +170,7 @@ async function openDataRoot(settings: AppSettings): Promise<string | null> {
 
 async function start(): Promise<void> {
   electronApp.setAppUserModelId('com.pixeltoolkit.app');
-  // No menu: removes Ctrl+R reload, Ctrl+W close and the Edit-role Ctrl+Z (PLAN §1)
+  // No menu: removes Ctrl+R reload, Ctrl+W close and the Edit-role Ctrl+Z
   Menu.setApplicationMenu(null);
 
   // Creates appSettings.config with defaults if missing. Data root: app.dataRoot relative to the app root

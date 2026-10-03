@@ -92,7 +92,7 @@ function headRegularization(reg: Pose, raw: Pose): { yawErr: number; tiltErr: nu
   return { yawErr: Math.abs(wrapDeg(a.yaw - b.yaw)), tiltErr: Math.abs(a.tilt - HEAD_TILT_KEEP * b.tilt) };
 }
 
-/** Upper-limb twist vs the rest normal carried along the swing from the ref frame (critique item 2), degrees. */
+/** Upper-limb twist vs the rest normal carried along the swing from the ref frame, degrees. */
 function limbTwistDeg(pose: Pose, chainName: string): number {
   const chain = LIMB_CHAINS.find((c) => c.name === chainName)!;
   const qW = worldRotations(pose);

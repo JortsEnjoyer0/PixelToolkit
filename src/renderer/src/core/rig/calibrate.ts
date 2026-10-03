@@ -1,5 +1,5 @@
-// Calibration (PLAN §4.4 plus every fix of docs/research/critique-rig-math.md): 18 COCO 3D points of the reference
-// pose → per-animation rig proportions + pose, such that FK reproduces all 18 points (< 1e-6; ~1e-15 in practice).
+// Calibration (docs/skelanim/rig.md "Calibration"): 18 COCO 3D points of the reference pose → per-animation rig
+// proportions + pose, such that FK reproduces all 18 points (< 1e-6; ~1e-15 in practice).
 import { BONE_NAMES, FACE_LABELS, type BoneName, type FaceLabel, type Pose, type Quat, type Vec3 } from '@shared/pose';
 import type { RigCalibration } from '../model';
 import { COCO, LABEL_INDEX } from './coco';
@@ -24,7 +24,7 @@ export interface CalibrateOptions {
 }
 
 /**
- * Head regularization (PLAN §4.4 step 5, refined): pixel-art faces are drawn level and frontal, so the Kabsch fit
+ * Head regularization ("Calibration" step 5): pixel-art faces are drawn level and frontal, so the Kabsch fit
  * reads pitched / rolled heads (east sprites 17–33° roll at top-down pitches). Face offsets are measured from the FK
  * head, so any head rotation reproduces the face exactly: keep the fitted yaw and only this fraction of the tilt.
  */
@@ -62,7 +62,7 @@ const T = TEMPLATE.offsets;
 /** Template spine split: Spine, then Chest / UpperChest / Neck over the rest of the torso. */
 const TORSO_T = T.Spine[1] + T.Chest[1] + T.UpperChest[1] + T.Neck[1];
 const UPPER3_T = T.Chest[1] + T.UpperChest[1] + T.Neck[1];
-/** Measured bend normals below this sin(bend) are pure fallback; full trust from 0.2 (PLAN §4.4 step 4). */
+/** Measured bend normals below this sin(bend) are pure fallback; full trust from 0.2 ("Calibration" step 4). */
 const BLEND_LO = 0.05;
 const BLEND_SPAN = 0.15;
 const FOLDED = -0.9999;

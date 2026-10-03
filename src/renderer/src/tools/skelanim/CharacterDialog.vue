@@ -1,8 +1,9 @@
 <script setup lang="ts">
-// Character dialog (PLAN §6): name (read-only; rename in the explorer), description, defaults for new animations and
-// the base images (import, label, direction, remove). Import and Remove are saved at once (they create / recycle
-// files); description, defaults, labels and directions are written on Save. Every write is a documents.updateCharacter
-// producer that only touches these fields, so concurrent writers (the estimate cache) are never clobbered.
+// Character dialog (docs/skelanim/skelanim.md "UI"): name (read-only; rename in the explorer), description, defaults
+// for new animations and the base images (import, label, direction, remove). Import and Remove are saved at once (they
+// create / recycle files); description, defaults, labels and directions are written on Save. Every write is a
+// documents.updateCharacter producer that only touches these fields, so concurrent writers (the estimate cache) are
+// never clobbered.
 import { computed, onMounted, reactive, ref, shallowRef } from 'vue';
 import { ImagePlus, PersonStanding, Trash2 } from '@lucide/vue';
 import { assetUrl } from '@shared/api';

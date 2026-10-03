@@ -1,4 +1,5 @@
-// COCO-18 / OpenPose constants and the pinned ControlNet palette (PLAN §4.7). Editor and thumbnails share these.
+// COCO-18 / OpenPose constants and the pinned ControlNet palette (docs/skelanim/rig.md "OpenPose palette"). Editor and
+// thumbnails share these.
 import { SKELETON_LABELS, type SkeletonLabel } from '@shared/pixellab';
 import { FACE_LABELS, type FaceLabel } from '@shared/pose';
 

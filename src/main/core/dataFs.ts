@@ -1,6 +1,6 @@
-// Sandboxed data-root filesystem (PLAN §3 "Writes and renames"). Electron-free: used by the IPC modules and by the tsx
-// tests in scripts/. Every renderer path is data-root relative (POSIX) and checked lexically AND by realpath, so a
-// junction or symlink inside the data root can never lead outside it.
+// Sandboxed data-root filesystem (docs/architecture.md "Data root and files"). Electron-free: used by the IPC modules
+// and by the tsx tests in scripts/. Every renderer path is data-root relative (POSIX) and checked lexically AND by
+// realpath, so a junction or symlink inside the data root can never lead outside it.
 import { randomBytes } from 'node:crypto';
 import { promises as fsp, type Dirent } from 'node:fs';
 import type { FileHandle } from 'node:fs/promises';

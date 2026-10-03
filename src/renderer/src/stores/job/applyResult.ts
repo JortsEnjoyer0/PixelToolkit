@@ -1,5 +1,6 @@
-// Pure helpers for applying a completed generation job (PLAN §5 Jobs, §6 Generation): the "Generate" producer that
-// replaces the track with the submitted poses plus the result images, and the checks around it. Framework-free.
+// Pure helpers for applying a completed generation job (docs/skelanim/skelanim.md "Estimate and generation flow"): the
+// "Generate" producer that replaces the track with the submitted poses plus the result images, and the checks around
+// it. Framework-free.
 import type { SubmittedSnapshot } from '@shared/jobs';
 import { uid } from '@shared/uid';
 import { parsePose, type FrameData, type Pose, type UndoableState } from '../../core/model';

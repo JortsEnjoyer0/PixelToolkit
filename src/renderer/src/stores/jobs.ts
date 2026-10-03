@@ -1,6 +1,7 @@
-// Jobs store (JobsStoreApi, PLAN §5 Jobs): mirrors main's generation job records ('jobs:update' + api.jobs.list()),
-// tracks in-flight estimates per doc, submits generations and applies finished results (open docs as one "Generate"
-// undo entry, closed docs headless: load, apply, save, unload). Logic lives in stores/job/jobsCore.ts.
+// Jobs store (JobsStoreApi; docs/skelanim/skelanim.md "Estimate and generation flow"): mirrors main's generation job
+// records ('jobs:update' + api.jobs.list()), tracks in-flight estimates per doc, submits generations and applies
+// finished results (open docs as one "Generate" undo entry, closed docs headless: load, apply, save, unload). Logic
+// lives in stores/job/jobsCore.ts.
 // App.vue calls initJobs() once after the settings load and restoreWorkspace(), so results for docs about to open are
 // applied to the open tab instead of headless.
 import { defineStore } from 'pinia';

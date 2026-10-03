@@ -1,7 +1,8 @@
-// Explorer state (PLAN §6 Explorer): the scanned data tree as ExplorerNodes, expansion (persisted through the
-// workspace), selection, inline rename, rescans (Refresh, window focus) and the serial queue that explorer filesystem
-// operations run on (tools/skelanim/explorer/explorerOps.ts). Nodes are keyed by rel (case-insensitive), so expansion
-// and selection survive rescans; unchanged nodes keep their object identity across recomputes (cheap re-renders).
+// Explorer state (docs/skelanim/skelanim.md "UI"): the scanned data tree as ExplorerNodes, expansion (persisted through
+// the workspace), selection, inline rename, rescans (Refresh, window focus) and the serial queue that explorer
+// filesystem operations run on (tools/skelanim/explorer/explorerOps.ts). Nodes are keyed by rel (case-insensitive), so
+// expansion and selection survive rescans; unchanged nodes keep their object identity across recomputes (cheap
+// re-renders).
 import { defineStore } from 'pinia';
 import { computed, ref, shallowRef, watch } from 'vue';
 import type { ScanNode } from '@shared/api';

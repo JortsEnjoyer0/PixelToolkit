@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// Skel Anim explorer (PLAN §6 Explorer): toolbar (New Character / New Animation / New Folder / Refresh / Collapse),
-// the folder → character → animation tree, context menus, keyboard (explorer zone), inline rename, rescans on
-// window focus. Fills its container; the tool layout sizes it (WorkspaceState.explorerWidth).
+// Skel Anim explorer (docs/skelanim/skelanim.md "UI"): toolbar (New Character / New Animation / New Folder / Refresh /
+// Collapse), the folder → character → animation tree, context menus, keyboard (explorer zone), inline rename, rescans
+// on window focus. Fills its container; the tool layout sizes it (WorkspaceState.explorerWidth).
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
   ChevronsDownUp, Clapperboard, Copy, FolderPlus, FolderSearch, PencilLine, PersonStanding, RefreshCw,
@@ -108,7 +108,7 @@ function deleteNode(node: Node): void {
 
 const NEW_CHARACTER: MenuEntry = { label: 'New Character', icon: NewCharacterIcon, action: newCharacter };
 const NEW_ANIMATION: MenuEntry = { label: 'New Animation', icon: NewAnimationIcon, action: newAnimation };
-/** Always at the root (PLAN §6), whichever row was right-clicked. */
+/** Always at the root (folders exist only there), whichever row was right-clicked. */
 const NEW_FOLDER: MenuEntry = { label: 'New Folder', icon: FolderPlus, action: newFolder };
 
 function menuFor(node: Node | null): MenuEntry[] {

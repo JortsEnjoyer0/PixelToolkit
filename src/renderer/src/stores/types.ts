@@ -1,5 +1,6 @@
-// Store-facing contracts (PLAN §5). Implementations: stores/documents.ts, tabs.ts, jobs.ts, playback.ts, settings.ts,
-// explorer.ts; stores/mockDoc.ts is an in-memory DocHandle for the testbed and node tests.
+// Store-facing contracts (docs/skelanim/skelanim.md "Documents"). Implementations: stores/documents.ts, tabs.ts,
+// jobs.ts, playback.ts, settings.ts, explorer.ts; stores/mockDoc.ts is an in-memory DocHandle for the testbed and node
+// tests.
 // The *StoreApi interfaces are the stores' public API for the UI and editor: a Pinia setup store implementing one must
 // expose at least these members (refs unwrap on the store, so `readonly x: T` is a ref/computed of T inside the store).
 import type { ComputedRef, Ref, ShallowRef } from 'vue';
@@ -68,8 +69,9 @@ export interface DocHandle {
   /** Replace the content and clear the history (clean reload from disk). */
   replaceState(state: UndoableState, fps: number): void;
   /**
-   * Run `op` on this doc's serial IO queue (PLAN §5 DocIO: saves, renames, image imports and moves, GC). `op` receives
-   * the paths current at execution time, e.g. `doc.runIo((p) => api.images.importReference(p.charRel, p.name))`.
+   * Run `op` on this doc's serial IO queue (saves, renames, image imports and moves, GC;
+   * docs/skelanim/skelanim.md "Saving, DocIO and image GC"). `op` receives the paths current at execution time, e.g.
+   * `doc.runIo((p) => api.images.importReference(p.charRel, p.name))`.
    */
   runIo<T>(op: (paths: DocPaths) => Promise<T>): Promise<T>;
   /** Register an image uid this doc created this session (reference import / copy, job result): a GC candidate. */
@@ -226,7 +228,7 @@ export interface SettingsStoreApi {
   save(patch: SettingsPatch): Promise<AppSettings>;
 }
 
-/** data/.ptk/workspace.json (PLAN §5 Workspace): what is restored on launch. Written debounced. */
+/** data/.ptk/workspace.json (docs/architecture.md "Workspace"): what is restored on launch. Written debounced. */
 export interface WorkspaceState {
   version: 1;
   /** Open tabs as animation json rels, in order. */

@@ -1,5 +1,5 @@
-// Persisted model (PLAN §3): character and animation json types, factories, serialize / parse (with migrations).
-// Field names are frozen. Framework-free: no Vue or three imports.
+// Persisted model (docs/skelanim/skelanim.md "Data model"): character and animation json types, factories, serialize /
+// parse (with migrations). Field names are frozen. Framework-free: no Vue or three imports.
 import {
   CAMERA_VIEWS, DIRECTIONS, SKELETON_LABELS, TEMPLATE_IDS, VIEW_PITCH,
   canonicalKeypoints, type CameraView, type Direction, type KeypointOut, type SkeletonLabel, type TemplateId
@@ -90,7 +90,7 @@ export interface ReferenceData {
   needsEstimate: boolean;
 }
 
-/** World → canvas: px = anchorPx.x + ppu·(P·r), py = anchorPx.y − ppu·(P·u) (PLAN §4.5). */
+/** World → canvas: px = anchorPx.x + ppu·(P·r), py = anchorPx.y − ppu·(P·u) (docs/skelanim/rig.md "Projection"). */
 export interface Projection {
   /** Canvas px per world unit. */
   ppu: number;
@@ -111,13 +111,16 @@ export interface FrameData {
 export interface RigCalibration {
   /** Head offset from the parent head, in the parent's rest frame. Hips' entry is unused (root = Pose.root). */
   offsets: Record<BoneName | EndSiteName, Vec3>;
-  /** Head-local face offsets, template-aligned frame (PLAN §4.4 step 5). */
+  /** Head-local face offsets, template-aligned frame (docs/skelanim/rig.md "Calibration" step 5). */
   face: Record<FaceLabel, Vec3>;
   /** H_char: rest HeadTop.y minus the lowest foot/toe y. */
   height: number;
 }
 
-/** Document fields that are undoable (everything PixelLab-bound except name and fps; PLAN §5). */
+/**
+ * Document fields that are undoable: everything PixelLab-bound, so not the name or fps
+ * (docs/skelanim/skelanim.md "Documents").
+ */
 export const UNDOABLE_KEYS = [
   'reference', 'rig', 'projection', 'frames', 'direction', 'view', 'pitchDeg',
   'action', 'description', 'templateId', 'seed', 'noBackground', 'sendDepth'

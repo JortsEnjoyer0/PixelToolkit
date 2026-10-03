@@ -1,4 +1,4 @@
-// Screen-space picking (critique item 10): the skeleton is drawn on top of everything and joints are only a few
+// Screen-space picking: the skeleton is drawn on top of everything and joints are only a few
 // pixels apart on small sprites, so picks compare projected positions in CSS px instead of raycasting.
 import * as THREE from 'three';
 import type { FkResult } from '../core/rig/fk';

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-// Skel Anim tool (PLAN §6 layout): Explorer (resizable, width persisted in the workspace) | right column: TabBar on top,
-// below it the ControlPanel (fixed width) | EditorPane (toolbar + viewport) over the FrameTrack, with a horizontal
-// splitter sizing the track's thumbnails. The editor area stays mounted while no tab is open (v-show), so the WebGL
-// context is created once; a placeholder with hints covers it then.
+// Skel Anim tool (docs/skelanim/skelanim.md "UI"): Explorer (resizable, width persisted in the workspace) | right
+// column: TabBar on top, below it the ControlPanel (fixed width) | EditorPane (toolbar + viewport) over the FrameTrack,
+// with a horizontal splitter sizing the track's thumbnails. The editor area stays mounted while no tab is open
+// (v-show), so the WebGL context is created once; a placeholder with hints covers it then.
 import { computed, ref, watch } from 'vue';
 import { Clapperboard } from '@lucide/vue';
 import Splitter from '../../components/common/Splitter.vue';

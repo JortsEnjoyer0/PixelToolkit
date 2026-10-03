@@ -1,7 +1,7 @@
-// Lifting (PLAN §4.6): 2D estimate → canonical 3D reference COCO points + the projection that reproduces it.
-// Every joint keeps its estimated 2D position exactly (NECK = the 2D shoulder midpoint); lifting only chooses the
-// camera depth d_c of each joint, from the canonical template (torso yaw δ, width scale k), the limb-length rule and
-// the estimate's z_index layers.
+// Lifting (docs/skelanim/rig.md "Lifting"): 2D estimate → canonical 3D reference COCO points + the projection that
+// reproduces it. Every joint keeps its estimated 2D position exactly (NECK = the 2D shoulder midpoint); lifting only
+// chooses the camera depth d_c of each joint, from the canonical template (torso yaw δ, width scale k), the limb-length
+// rule and the estimate's z_index layers.
 import { canonicalKeypoints, type Direction, type KeypointOut } from '@shared/pixellab';
 import { FACE_LABELS, type FaceLabel, type Vec3 } from '@shared/pose';
 import type { Projection } from '../model';
@@ -21,7 +21,7 @@ export interface LiftInput {
   pitchDeg: number;
 }
 
-/** How a limb bone's depth sign was chosen (PLAN §4.6 step 5): z_index order, template prior, joint plausibility. */
+/** How a limb bone's depth sign was chosen ("Lifting" step 6): z_index order, template prior, joint plausibility. */
 export type DepthRule = 'zIndex' | 'template' | 'plausibility' | 'flat';
 
 export interface LiftReport {
@@ -54,7 +54,7 @@ export interface LiftResult {
   report: LiftReport;
 }
 
-/** Face visibility weights from the 2D estimate (PLAN §4.4 step 5). */
+/** Face visibility weights from the 2D estimate, for calibrate's head fit ("Lifting" step 7). */
 export function faceWeightsFromEstimate(kps: readonly KeypointOut[], canvas: { width: number; height: number }): Record<FaceLabel, number> {
   const byLabel = new Map(kps.map((k) => [k.label, k]));
   const face = FACE_LABELS.map((l) => byLabel.get(l)!);
@@ -74,7 +74,7 @@ export function faceWeightsFromEstimate(kps: readonly KeypointOut[], canvas: { w
 
 /** Expected 2D noise of an estimated joint, canvas px. */
 const SIGMA_PX = 1.5;
-/** Torso yaw prior (radians) and limit (PLAN: δ ∈ [−60°, 60°]). */
+/** Torso yaw prior (radians) and limit (δ ∈ [−60°, 60°]). */
 const SIGMA_YAW = 40 * DEG;
 const YAW_LIMIT = 60;
 /** ln(k) prior: chibi shoulder / hip widths vary roughly ±25% around the template. */
@@ -84,11 +84,11 @@ const K_MAX = 2.0;
 /** Head yaw prior relative to the torso, and the search half-range. */
 const SIGMA_HEAD = 45 * DEG;
 const HEAD_RANGE = 80;
-/** A template bone that keeps at least this fraction of its length in 2D "shows clearly" (PLAN §4.6 step 5). */
+/** A template bone that keeps at least this fraction of its length in 2D "shows clearly" ("Lifting" steps 4 and 6). */
 const RHO_CLEAR = 0.6;
 /** z_index layers this far apart order two joints; nearer = higher (estimate convention, nearest = 0). */
 const Z_STEP = 0.5;
-/** L/R z_index difference that gives the torso yaw a sign (PLAN: at least 1). */
+/** Smallest L/R z_index difference that gives the torso yaw a sign. */
 const Z_SIDE = 1;
 
 const TORSO = [COCO.L_SHOULDER, COCO.R_SHOULDER, COCO.L_HIP, COCO.R_HIP] as const;
@@ -156,7 +156,7 @@ function evalTorso(obs: readonly P2[], rel: readonly Vec3[], delta: number, k: n
 
 interface TorsoFit { delta: number; k: number; s: number; spread: number }
 
-/** PLAN §4.6 step 3: torso yaw δ jointly with the width scale k, priors on δ and ln k, sign from the L/R z_index. */
+/** "Lifting" step 3: torso yaw δ jointly with the width scale k, priors on δ and ln k, sign from the L/R z_index. */
 function fitTorso(px: readonly P2[], z: readonly number[], b: CameraBasis, tpl: TemplateData, warnings: string[]): TorsoFit {
   const obsRaw: P2[] = TORSO.map((j) => [px[j][0], -px[j][1]]);
   const ox = obsRaw.reduce((a, o) => a + o[0], 0) / obsRaw.length;
@@ -223,7 +223,7 @@ function fitTorso(px: readonly P2[], z: readonly number[], b: CameraBasis, tpl: 
 
 interface FaceFit { psi: number; h: number }
 
-/** PLAN §4.6 step 7: head yaw ψ_h with the face's 2D offset and scale h (px per template unit) by weighted least squares. */
+/** "Lifting" step 7: head yaw ψ_h with the face's 2D offset and scale h (px per template unit) by weighted least squares. */
 function fitFace(px: readonly P2[], w: readonly number[], delta: number, b: CameraBasis, fallbackH: number): FaceFit {
   const obs: P2[] = FACE.map((j) => [px[j][0], -px[j][1]]);
   const wSum = w.reduce((a, v) => a + v, 0);
@@ -279,7 +279,7 @@ function fitFace(px: readonly P2[], w: readonly number[], delta: number, b: Came
 }
 
 /**
- * Lift the 2D estimate (PLAN §4.6). The canonical template is projected with basis(θ, φ) and is never yawed by θ; a
+ * Lift the 2D estimate. The canonical template is projected with basis(θ, φ) and is never yawed by θ; a
  * relative torso yaw δ is fitted instead. Throws unless all 18 labels exist.
  */
 export function lift(input: LiftInput): LiftResult {
@@ -320,7 +320,7 @@ export function lift(input: LiftInput): LiftResult {
   const ppu = den > 1e-18 ? num / den : s;
   const g = s / ppu; // torso world scale vs the template
 
-  // Step 6: torso depths from the template at δ (camera depth d_c), hip centre at depth 0
+  // Step 5: torso depths from the template at δ (camera depth d_c), hip centre at depth 0
   const dc = new Array<number>(18).fill(0);
   for (const j of TORSO) {
     const q = sub(tpl.coco[j], tpl.hip);
@@ -328,7 +328,7 @@ export function lift(input: LiftInput): LiftResult {
   }
   dc[COCO.NECK] = (dc[COCO.L_SHOULDER] + dc[COCO.R_SHOULDER]) / 2;
 
-  // Step 5: limb depths parent → child
+  // Step 6: limb depths parent → child
   const fwd = rotateY([0, 0, 1], delta);
   const cf = dot(b.c, fwd);
   const limbRules: Record<string, DepthRule> = {};

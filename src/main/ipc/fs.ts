@@ -1,4 +1,5 @@
-// Sandboxed fs IPC (PLAN §2 ipc/fs.ts). The logic lives in core/dataFs.ts (electron-free, tested by scripts/).
+// Sandboxed fs IPC (docs/architecture.md "Data root and files"). The logic lives in core/dataFs.ts (electron-free,
+// tested by scripts/).
 import { shell } from 'electron';
 import { IPC } from '../../shared/api';
 import { PTK_DIR } from '../../shared/dataPaths';

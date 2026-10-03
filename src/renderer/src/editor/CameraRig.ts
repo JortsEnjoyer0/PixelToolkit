@@ -1,6 +1,7 @@
-// Editor cameras (PLAN §6 Editor, critique items 12 / 13): orthographic by default with an aligned view that reproduces the
-// PixelLab canvas exactly, a perspective alternative, OrbitControls (LMB orbit, MMB pan, wheel zoom), WASD / Space / C fly
-// keys, the explicit `aligned` flag and the previous custom view. Programmatic moves never inherit leftover damping.
+// Editor cameras (aligned view: docs/skelanim/rig.md "Projection"): orthographic by default with an aligned view that
+// reproduces the PixelLab canvas exactly, a perspective alternative, OrbitControls (LMB orbit, MMB pan, wheel zoom),
+// WASD / Space / C fly keys, the explicit `aligned` flag and the previous custom view. Programmatic moves never inherit
+// leftover damping.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { Vec3 } from '../core/model';

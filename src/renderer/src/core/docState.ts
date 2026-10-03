@@ -134,9 +134,9 @@ function relift(state: UndoableState, estimate: readonly KeypointOut[]): { state
 }
 
 /**
- * "Estimate Skeleton" (PLAN §6): lift + calibrate the 2D estimate of the reference image and set reference, rig and
- * projection. When the track is empty or `resetFrames` (the confirm checkbox), frames = [a copy of the reference pose].
- * Throws unless the estimate has all 18 labels once.
+ * "Estimate Skeleton" (docs/skelanim/skelanim.md "Estimate and generation flow"): lift + calibrate the 2D estimate of
+ * the reference image and set reference, rig and projection. When the track is empty or `resetFrames` (the confirm
+ * checkbox), frames = [a copy of the reference pose]. Throws unless the estimate has all 18 labels once.
  */
 export function withEstimate(state: UndoableState, estimate: readonly KeypointOut[], opts: { resetFrames?: boolean } = {}): { state: UndoableState; report: EstimateReport } {
   const r = relift(state, estimate);
@@ -145,9 +145,10 @@ export function withEstimate(state: UndoableState, estimate: readonly KeypointOu
 }
 
 /**
- * Direction / view / pitch change (PLAN §4.5): one undo entry that re-lifts the reference from reference.estimate and
- * recalibrates; track frames keep their local rotations. Without an estimate only the camera fields change. The caller
- * picks the pitch (the panel resets it to VIEW_PITCH[view] when the view changes). Unchanged camera → same object.
+ * Direction / view / pitch change (docs/skelanim/skelanim.md "Estimate and generation flow"): one undo entry that
+ * re-lifts the reference from reference.estimate and recalibrates; track frames keep their local rotations. Without an
+ * estimate only the camera fields change. The caller picks the pitch (the panel resets it to VIEW_PITCH[view] when the
+ * view changes). Unchanged camera → same object.
  */
 export function withCamera(state: UndoableState, cam: { direction?: Direction; view?: CameraView; pitchDeg?: number }): { state: UndoableState; report: EstimateReport | null } {
   const next = { ...state, direction: cam.direction ?? state.direction, view: cam.view ?? state.view, pitchDeg: cam.pitchDeg ?? state.pitchDeg };

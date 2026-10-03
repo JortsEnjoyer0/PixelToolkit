@@ -1,7 +1,8 @@
-// Documents store (DocumentsStoreApi, PLAN §5): open DocHandles, the character cache and every IO-aware entity
-// operation: load, save (Ctrl+S, autosave, close prompts), animation renames, explorer exclusivity (runExclusive),
-// image GC, rescan reconciliation and the app-close prompt. Each doc has one serial IO queue; ops read the doc's
-// paths when they run, never when they are queued. Handles are markRaw'd in a shallowReactive Map.
+// Documents store (DocumentsStoreApi; docs/skelanim/skelanim.md "Documents" and "Saving, DocIO and image GC"): open
+// DocHandles, the character cache and every IO-aware entity operation: load, save (Ctrl+S, autosave, close prompts),
+// animation renames, explorer exclusivity (runExclusive), image GC, rescan reconciliation and the app-close prompt.
+// Each doc has one serial IO queue; ops read the doc's paths when they run, never when they are queued. Handles are
+// markRaw'd in a shallowReactive Map.
 import { defineStore } from 'pinia';
 import { computed, onScopeDispose, ref, shallowReactive, watch } from 'vue';
 import type { ScanNode } from '@shared/api';

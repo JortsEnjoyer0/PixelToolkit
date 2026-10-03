@@ -1,6 +1,6 @@
-// COCO-18 overlay in the pinned OpenPose palette (PLAN §4.7): 17 limbs (screen-space width lines) and 18 joint dots,
-// drawn on top of everything but the gizmo. In COCO edit mode the dots are larger draggable handles (NECK stays a
-// derived, non-pickable point) and a ring marks the hovered / dragged handle.
+// COCO-18 overlay in the pinned OpenPose palette (docs/skelanim/rig.md "OpenPose palette"): 17 limbs (screen-space
+// width lines) and 18 joint dots, drawn on top of everything but the gizmo. In COCO edit mode the dots are larger
+// draggable handles (NECK stays a derived, non-pickable point) and a ring marks the hovered / dragged handle.
 import * as THREE from 'three';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';

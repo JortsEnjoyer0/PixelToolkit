@@ -1,6 +1,6 @@
-// Explorer entity operations (PLAN §6 Explorer → Creation / Delete / Rescan, §3 on-disk model): create, rename,
-// duplicate, delete, repair and reveal folders, characters and animations through window.api.fs. Each filesystem
-// change runs on the explorer store's serial op queue; changes that touch open docs go through
+// Explorer entity operations (docs/skelanim/skelanim.md "UI"; file rules: docs/architecture.md "Data root and files"):
+// create, rename, duplicate, delete, repair and reveal folders, characters and animations through window.api.fs. Each
+// filesystem change runs on the explorer store's serial op queue; changes that touch open docs go through
 // documents.runExclusive (or documents.renameAnimation) so tabs, doc IO queues and pending jobs follow.
 import {
   animImageFileName, animJsonRel, animNameFromRel, baseImageFileName, charJsonRel, charNameFromRel, charRelFromAnimRel, joinRel,

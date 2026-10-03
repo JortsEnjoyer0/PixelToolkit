@@ -1,4 +1,4 @@
-// App close handshake (PLAN §5 Saving, Phase 1 outcomes). Main sends 'app:before-close' on every close attempt;
+// App close handshake (docs/architecture.md "Main process"). Main sends 'app:before-close' on every close attempt;
 // installCloseHandshake() (App.vue) runs the registered close handlers one after another in registration order.
 // When every handler resolves true, api.app.closeReady() lets main destroy the window; the first false aborts the
 // close (e.g. Cancel in the unsaved-changes prompt). Repeats are ignored while handlers run. A handler that throws

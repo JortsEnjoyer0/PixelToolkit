@@ -1,5 +1,5 @@
-// The 3D pose editor (PLAN §6 Editor; critique items 9-15, 22, 31, 32). Framework-free and store-free: EditorPane and the
-// testbed drive this same class through IEditorViewport + DocSource.
+// The 3D pose editor (docs/skelanim/skelanim.md "UI"). Framework-free and store-free: EditorPane and the testbed drive
+// this same class through IEditorViewport + DocSource.
 //
 // Rendering is on demand: invalidate() schedules one rAF (drags call it on every change), and frames keep coming while
 // the camera damps or fly keys are held. Draw order: floor + image plane, renderer.clearDepth(), then the foreground
@@ -188,7 +188,7 @@ export class EditorViewport implements IEditorViewport {
       cameraChange: (cam) => this.gizmo?.setCamera(cam),
       change: () => this.invalidate()
     });
-    // TransformControls first: its pointerdown listener must run before OrbitControls' (critique item 9)
+    // TransformControls first: its pointerdown listener must run before OrbitControls'
     this.gizmo = new GizmoController(this.rig.camera, canvas, this.fgScene, this.helperScene, {
       dragStart: () => this.onGizmoDragStart(),
       dragChange: () => {

@@ -1,6 +1,6 @@
-// Generation job service (PLAN §7, resolved-facts R2, R3, R7): journal, submit, poll, decode, stage, push.
-// Electron-free: main injects the PixelLab transport and the push function; scripts/test-jobs.ts drives it with a
-// fake fetch and a fake clock. Paid jobs are never resubmitted: the journal is written before the POST.
+// Generation job service (docs/pixellab.md "Background jobs" and "In this codebase"): journal, submit, poll, decode,
+// stage, push. Electron-free: main injects the PixelLab transport and the push function; scripts/test-jobs.ts drives it
+// with a fake fetch and a fake clock. Paid jobs are never resubmitted: the journal is written before the POST.
 import { promises as fsp } from 'node:fs';
 import type { Result } from '../../shared/api';
 import {
@@ -22,7 +22,7 @@ import { IncompleteResultError, decodeResultImages } from './resultImages';
 export const POLL_MS = 6000;
 /**
  * Still running this long after submit (time before this session or asleep does not count): the job is stalled. It is
- * never failed or cancelled for that (R3.5): it keeps its id, is polled every MAX_BACKOFF_MS and its error says so.
+ * never failed or cancelled for that: it keeps its id, is polled every MAX_BACKOFF_MS and its error says so.
  */
 export const JOB_DEADLINE_MS = 60 * 60 * 1000;
 export const MAX_BACKOFF_MS = 5 * 60 * 1000;
@@ -42,7 +42,7 @@ const NOT_RESUBMITTED = 'It was not resubmitted; check your PixelLab account bef
 
 /** Journal entry: the contract record plus main-only bookkeeping (stripped before anything reaches the renderer). */
 interface Entry extends JobRecord {
-  /** first_frame canvas: the R7 fallback size for raw RGBA results. */
+  /** first_frame canvas: the fallback size for raw RGBA results that carry no width / height. */
   canvas: { width: number; height: number };
 }
 

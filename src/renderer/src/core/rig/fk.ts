@@ -1,4 +1,4 @@
-// Forward kinematics (PLAN §4.2) and the rig → COCO-18 mapping (PLAN §4.3).
+// Forward kinematics and the rig → COCO-18 mapping (docs/skelanim/rig.md "Rig" and "COCO-18 mapping").
 // Both run per frame per thumbnail: pass `out` buffers (createFkResult / createCoco) and they allocate nothing.
 import { BONE_NAMES, FACE_LABELS, type Pose, type Quat, type Vec3 } from '@shared/pose';
 import { SKELETON_LABELS } from '@shared/pixellab';

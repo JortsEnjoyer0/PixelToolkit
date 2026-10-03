@@ -1,6 +1,7 @@
-// Crash-safe image GC (PLAN §5 Image GC, Phase 1 outcomes). Every image file main writes this session is appended to
-// data/.ptk/session-created.json. The list is swept at startup (before the window opens) and after closeReady: a listed
-// file whose uid no json references and no job needs is deleted. Electron-free (tested by scripts/test-main-fs.ts).
+// Crash-safe image GC: the session sweep (docs/architecture.md "Data root and files"). Every image file main writes
+// this session is appended to data/.ptk/session-created.json. The list is swept at startup (before the window opens)
+// and after closeReady: a listed file whose uid no json references and no job needs is deleted. Electron-free (tested
+// by scripts/test-main-fs.ts).
 import { promises as fsp, type Dirent } from 'node:fs';
 import {
   PTK_DIR, SESSION_CREATED_REL, baseNameRel, charJsonRel, joinRel, parentRel, parseImageFileName,

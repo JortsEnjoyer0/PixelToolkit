@@ -1,4 +1,4 @@
-// Keyboard shortcuts with one window keydown listener and the zone rules of PLAN §5:
+// Keyboard shortcuts with one window keydown listener and these zone rules (docs/ui.md "Shortcuts"):
 // - handlers of the current focus zone run first, then 'global' ones (newest registration first in each group);
 // - keys from text-editable targets are ignored unless the shortcut sets allowInInputs (Ctrl+S);
 // - plain arrows are left to targets that own them (text fields, range inputs, selects);

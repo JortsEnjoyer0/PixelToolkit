@@ -1,5 +1,6 @@
-// Playback store (PlaybackStoreApi, PLAN §5 Playback): the sole owner of each doc's active target (REF or a track
-// frame uid, never an index) and the play loop of the active doc. Logic lives in stores/job/playbackCore.ts.
+// Playback store (PlaybackStoreApi; docs/skelanim/skelanim.md "Playback"): the sole owner of each doc's active target
+// (REF or a track frame uid, never an index) and the play loop of the active doc. Logic lives in
+// stores/job/playbackCore.ts.
 // - target(docId): REF by default; a vanished frame uid resolves to the frame now at its last index, or REF.
 // - play() loops the active doc over frames 1..N at doc.fps (from REF it starts at frame 1); switching the active
 //   tab, emptying the track, step() and the seeks pause it. setTarget() to a frame keeps playing from there.

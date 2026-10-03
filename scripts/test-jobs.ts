@@ -1,7 +1,7 @@
 // npm run test:main (or npx tsx scripts/test-jobs.ts)
 // The main-process job service (src/main/core/jobService.ts) against a FAKE PixelLab (fake fetch + fake clock):
-// queued → processing → completed for every R7 image shape, 429 / 5xx / network backoff, failures, 404s, the deadline,
-// cancel, ack, retarget, POST failures and a restart that resumes from the journal without resubmitting.
+// queued → processing → completed for every result image shape, 429 / 5xx / network backoff, failures, 404s, the
+// deadline, cancel, ack, retarget, POST failures and a restart that resumes from the journal without resubmitting.
 // No network, no Electron, no generations spent. Temp dirs go under PT_TEST_TMP (default: os.tmpdir()).
 import { promises as fsp, existsSync, readFileSync } from 'node:fs';
 import os from 'node:os';
@@ -121,7 +121,7 @@ const rgba = (i: number, w = CANVAS, h = CANVAS): Uint8Array => {
 const pngB64 = (i: number): string => Buffer.from(encodePng({ width: CANVAS, height: CANVAS, data: rgba(i) })).toString('base64');
 const rawB64 = (i: number, w = CANVAS, h = CANVAS): string => Buffer.from(rgba(i, w, h)).toString('base64');
 
-/** Every result image shape from resolved-facts R7 / U2 (plus a nested object). */
+/** Every result image shape of docs/pixellab.md "Background jobs" (U2), plus a nested object. */
 const SHAPES: { name: string; image(i: number): unknown; size?: number }[] = [
   { name: 'bare base64 PNG string', image: (i) => pngB64(i) },
   { name: 'data: URI string', image: (i) => `data:image/png;base64,${pngB64(i)}` },
@@ -173,7 +173,7 @@ async function main(): Promise<void> {
   check('POST failure → ok:false with the detail', !postFail.ok && postFail.status === 422 && /body\.keypoints: bad keypoints/.test(postFail.error), JSON.stringify(postFail));
   check('POST failure removes the intent', journal().jobs.length === 0 && svc.list().length === 0 && events.length === 0);
 
-  // ---- every R7 shape: queued → processing → completed ----
+  // ---- every result image shape: queued → processing → completed ----
   console.log('R7 shapes: queued → processing → completed');
   const shapeJobs: { shape: typeof SHAPES[number]; ev: JobUpdateEvent }[] = [];
   for (const shape of SHAPES) {
@@ -366,7 +366,7 @@ async function main(): Promise<void> {
   await advance(POLL_MS * 4);
   check('three 404s → failed', svc.get(k404?.key ?? '')?.status === 'failed' && /404/.test(svc.get(k404?.key ?? '')?.error ?? ''), svc.get(k404?.key ?? '')?.error ?? '');
 
-  // ---- deadline: a stalled job is never failed or cancelled (R3.5); it is polled every 5 min and says so ----
+  // ---- deadline: a stalled job is never failed or cancelled; it is polled every 5 min and says so ----
   fake.scripts.push([processing, processing, completed([0, 1, 2].map(pngB64))]);
   const rd = await svc.submitAnimate(submitInput(refRel));
   const kd = rd.ok ? rd.data : null;

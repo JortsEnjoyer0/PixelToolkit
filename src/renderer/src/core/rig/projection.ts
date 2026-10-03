@@ -1,4 +1,5 @@
-// Orthographic PixelLab projection (PLAN §4.5): camera basis, world ↔ canvas, keypoints, aligned editor view.
+// Orthographic PixelLab projection (docs/skelanim/rig.md "Projection" and "z_index and depth"): camera basis, world ↔
+// canvas, keypoints, aligned editor view.
 import { DIRECTIONS, SKELETON_LABELS, type Direction, type Keypoint } from '@shared/pixellab';
 import type { Pose, Vec3 } from '@shared/pose';
 import type { Projection, ReferenceData, RigCalibration, UndoableState } from '../model';
@@ -129,7 +130,7 @@ const JOINTS = SKELETON_LABELS.length;
 const MAX_RANK = JOINTS - 1;
 
 /**
- * z_index priority (high first, PLAN §4.5): NOSE 4, EYES 3, wrists = elbows = knees 2, EARS 1, the rest 0.
+ * z_index priority (high first): NOSE 4, EYES 3, wrists = elbows = knees 2, EARS 1, the rest 0.
  * Breaks near-ties in favour of the joints whose occlusion matters most.
  */
 export const Z_PRIORITY: readonly number[] = SKELETON_LABELS.map((l) => {
@@ -145,7 +146,7 @@ const PRIO_MAX = 4;
 const IS_FACE: readonly boolean[] = SKELETON_LABELS.map((l) => isFaceLabel(l));
 
 /**
- * 18 canonical COCO points (world) → PixelLab keypoints (PLAN §4.5). z_index is a unique rank (nearest = 17) from
+ * 18 canonical COCO points (world) → PixelLab keypoints. z_index is a unique rank (nearest = 17) from
  * one scalar key per joint, k_j = d_h + ε·(0.5·prio_j/prioMax + 0.5·prevRank_j/17) with ε = 0.02·H_char, label index
  * as the final tie-break, so the order is a strict total order. Face priorities flip sign when the head faces away.
  * depth (sendDepth only) = clamp(round(128 + 255·d_h/H_char), 0, 255).
@@ -251,7 +252,7 @@ export function projectCocoForDisplay(state: DisplayState, coco: readonly Vec3[]
 }
 
 /**
- * Project poses in submission order (PLAN §4.5): poses[0] = the reference, then track frames 1..N. Each frame's hip
+ * Project poses in submission order: poses[0] = the reference, then track frames 1..N. Each frame's hip
  * centre, head forward and Hchar come from FK; z_index hysteresis chains frame to frame with no wrap-around.
  * result[0] → first_frame_keypoints, result[1..] → keypoints. The thumbnails must not use this (hysteresis couples frames).
  */

@@ -1,5 +1,5 @@
 // Character dialog helpers: select options and labels, the direction guess for imported sprites, and the "which
-// animations reference this base image" check behind Remove (PLAN §6 Character dialog).
+// animations reference this base image" check behind Remove (docs/skelanim/skelanim.md "UI").
 import { joinRel } from '@shared/dataPaths';
 import { CAMERA_VIEWS, DIRECTIONS, TEMPLATE_IDS, type CameraView, type Direction, type TemplateId } from '@shared/pixellab';
 import type { SelectOption } from '../../../components/common/types';

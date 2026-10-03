@@ -11,7 +11,7 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
   # Never package local data, secrets, docs or dev output
   - '!appSettings.config'
-  - '!{data,docs,assets,testbed,.screenshots}/**'
+  - '!{data,docs,archive,assets,testbed,.screenshots}/**'
 asarUnpack:
   - resources/**
 win:

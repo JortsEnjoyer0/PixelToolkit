@@ -1,8 +1,8 @@
-// Workspace store (WorkspaceStoreApi, PLAN §5 Workspace): data/.ptk/workspace.json holds the open tabs, the active tab,
-// explorer expansion and width, the frame-track thumbnail height and the editor toolbar toggles (with the ghost frame
-// count). It is read once when the store is created and written debounced (createDirs, since .ptk may not exist yet).
-// Nothing is written before the read finished, so early update() calls never clobber the file; they are merged on top
-// of it instead.
+// Workspace store (WorkspaceStoreApi; docs/architecture.md "Workspace"): data/.ptk/workspace.json holds the open tabs,
+// the active tab, explorer expansion and width, the frame-track thumbnail height and the editor toolbar toggles (with
+// the ghost frame count). It is read once when the store is created and written debounced (createDirs, since .ptk may
+// not exist yet). Nothing is written before the read finished, so early update() calls never clobber the file; they are
+// merged on top of it instead.
 // restoreWorkspace() (reopening the saved tabs) lives in stores/tabs.ts.
 import { defineStore } from 'pinia';
 import { onScopeDispose, ref, shallowRef } from 'vue';

@@ -1,6 +1,6 @@
-// Serial async queue (PLAN §5 DocIO): one per open doc (saves, renames, image imports and moves, GC) and one per
-// character json. Ops run strictly one after another; pause() parks a barrier in the queue so explorer operations
-// can run while nothing of the doc is in flight (DocumentsStoreApi.runExclusive).
+// Serial async queue (docs/skelanim/skelanim.md "Saving, DocIO and image GC"): one per open doc (saves, renames, image
+// imports and moves, GC) and one per character json. Ops run strictly one after another; pause() parks a barrier in the
+// queue so explorer operations can run while nothing of the doc is in flight (DocumentsStoreApi.runExclusive).
 
 export class IoQueue {
   private tail: Promise<unknown> = Promise.resolve();

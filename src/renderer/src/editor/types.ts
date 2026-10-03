@@ -1,5 +1,5 @@
-// Editor contracts (PLAN §6 Editor). editor/ is three.js, non-reactive, and imports no stores: the app (EditorPane)
-// and the testbed drive the same EditorViewport class through these interfaces.
+// Editor contracts (docs/skelanim/skelanim.md "UI"). editor/ is three.js, non-reactive, and imports no stores: the app
+// (EditorPane) and the testbed drive the same EditorViewport class through these interfaces.
 import type { BoneName, FrameTarget, Pose, UndoableState, Vec3 } from '../core/model';
 import { clamp } from '../core/util/math';
 
@@ -44,7 +44,7 @@ export interface DisplayOptions {
   showCoco: boolean;
   /** Our rig skeleton (bones, joints, anchor). Hidden: no rig picking and no gizmo. */
   showSkeleton: boolean;
-  /** Onion skin: our rig at 35 % opacity for the `ghostCount` track frames before the shown one (independent of showSkeleton; never picked). */
+  /** Onion skin: our rig at GhostView's GHOST_OPACITY for the `ghostCount` track frames before the shown one (independent of showSkeleton; never picked). */
   showGhosts: boolean;
   /** Ghost frames shown while showGhosts is on: an integer in 0..GHOST_COUNT_MAX. */
   ghostCount: number;

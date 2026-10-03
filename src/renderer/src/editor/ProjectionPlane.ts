@@ -1,5 +1,6 @@
 // Background layer (drawn before renderer.clearDepth()): the floor grid at Y = 0 and the PixelLab canvas rectangle,
-// spanned by the camera basis r, u through the aligned target, carrying the frame / reference image (PLAN §4.5).
+// spanned by the camera basis r, u through the aligned target, carrying the frame / reference image
+// (docs/skelanim/rig.md "Projection").
 import * as THREE from 'three';
 import type { AlignedView } from '../core/rig/projection';
 

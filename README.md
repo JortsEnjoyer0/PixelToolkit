@@ -2,7 +2,8 @@
 
 Electron + Vue 3 + TypeScript + three.js desktop toolkit for pixel art. First tool: the Skeletal Animator.
 
-- Architecture and build plan: `docs/PLAN.md`
+- Start here: `CLAUDE.md` (repo map, hard rules, which doc to read for which work)
+- Design docs: `docs/` (`architecture.md`, `ui.md`, `pixellab.md`, `skelanim/skelanim.md`, `skelanim/rig.md`)
 - Coding rules (mandatory): `CodeGuide.md`
 - Settings and API keys: `appSettings.config` (JSON, gitignored, created with defaults on first run)
 - App data: `data/` (gitignored), beside `appSettings.config`

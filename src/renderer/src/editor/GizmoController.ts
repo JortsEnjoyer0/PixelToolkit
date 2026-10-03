@@ -1,4 +1,4 @@
-// TransformControls on a proxy object (critique item 15). The proxy sits at the selected bone's head with qW(bone)
+// TransformControls on a proxy object. The proxy sits at the selected bone's head with qW(bone)
 // (rotate) or at the Hips position (translate). Each objectChange writes qL = qW(parent)⁻¹·proxy.q (or the root
 // position) into a scratch pose the gizmo owns; the proxy is never re-synced from FK while dragging.
 import * as THREE from 'three';

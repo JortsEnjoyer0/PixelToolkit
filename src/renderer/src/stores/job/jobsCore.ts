@@ -1,5 +1,6 @@
-// Jobs logic behind stores/jobs.ts (JobsStoreApi, PLAN §5 Jobs / §7), store-free so a test can drive it with a mock
-// window.api and mock documents / tabs stores. Reactive state holds plain records and doc ids, never DocHandles.
+// Jobs logic behind stores/jobs.ts (JobsStoreApi; docs/skelanim/skelanim.md "Estimate and generation flow"), store-free
+// so a test can drive it with a mock window.api and mock documents / tabs stores. Reactive state holds plain records
+// and doc ids, never DocHandles.
 // - records mirror main's journal through 'jobs:update' plus api.jobs.list() at init;
 // - in-flight estimates / submits / result applications are tracked per doc id (busy flags, spinners);
 // - final records are handled once per key: completed → staged PNGs moved, "Generate" applied, saved, acked (once the

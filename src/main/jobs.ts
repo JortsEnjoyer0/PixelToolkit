@@ -1,5 +1,5 @@
-// Generation jobs (PLAN §7): electron glue around core/jobService.ts (journal, submit, 6 s polling with backoff, R7
-// decoding, staging). Records are pushed to every window as 'jobs:update' (no snapshot).
+// Generation jobs (docs/pixellab.md "In this codebase"): electron glue around core/jobService.ts (journal, submit, 6 s
+// polling with backoff, result decoding, staging). Records are pushed to every window as 'jobs:update' (no snapshot).
 import { BrowserWindow, powerMonitor } from 'electron';
 import { IPC } from '../shared/api';
 import type { JobUpdateEvent, SubmitAnimateInput } from '../shared/jobs';

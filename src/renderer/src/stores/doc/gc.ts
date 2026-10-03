@@ -1,5 +1,6 @@
-// Image GC (PLAN §5 Image GC). Candidates are the uids a doc ever referenced or created; a candidate is deleted when
-// it is not live. Ownership is by exact file name "<anim>.<uid>.png" (never a pattern), so base.* files are never hit.
+// Image GC (docs/skelanim/skelanim.md "Saving, DocIO and image GC"). Candidates are the uids a doc ever referenced or
+// created; a candidate is deleted when it is not live. Ownership is by exact file name "<anim>.<uid>.png" (never a
+// pattern), so base.* files are never hit.
 import { animImageRel, baseNameRel, parseImageFileName } from '@shared/dataPaths';
 import type { JobUpdateEvent } from '@shared/jobs';
 import { referencedImages } from '../../core/docState';

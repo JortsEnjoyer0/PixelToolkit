@@ -1,5 +1,6 @@
-// PNG import and copies (PLAN §3 Images): validate, pad (never scale), write "<charRel>/<owner>.<uid>.png" atomically and
-// record it in session-created.json. Electron-free: the IPC layer (ipc/images.ts) only adds the file dialog.
+// PNG import and copies (docs/architecture.md "Data root and files"): validate, pad (never scale), write
+// "<charRel>/<owner>.<uid>.png" atomically and record it in session-created.json. Electron-free: the IPC layer
+// (ipc/images.ts) only adds the file dialog.
 import { promises as fsp } from 'node:fs';
 import path from 'node:path';
 import type { ImportedImage } from '../../shared/api';
@@ -35,7 +36,7 @@ export function prepareImport(bytes: Uint8Array, label: string): PreparedImage {
   return { png: encodePng(padded.img), width: padded.width, height: padded.height, srcWidth: img.width, srcHeight: img.height, offset: padded.offset };
 }
 
-/** Main-side guard for names that become file name prefixes (PLAN §3 Names; the rules live in shared/names.ts). */
+/** Main-side guard for names that become file name prefixes (the rules live in shared/names.ts). */
 export function checkEntityName(name: unknown, what: string): string {
   const problem = typeof name === 'string' ? nameProblem(name) : 'not a string';
   if (problem !== null)

@@ -1,5 +1,6 @@
-// Authenticated PixelLab transport and the typed operations (resolved-facts R0, R1, R3). Electron-free: main injects
-// net.fetch and a settings reader, the tsx tests inject a fake fetch. Never throws: every failure is a value.
+// Authenticated PixelLab transport and the typed operations (docs/pixellab.md "Endpoints and auth"). Electron-free:
+// main injects net.fetch and a settings reader, the tsx tests inject a fake fetch. Never throws: every failure is a
+// value.
 import type { Balance, EstimateResult, Result } from '../../shared/api';
 import { finiteOrNull, isObj, type Obj } from '../../shared/json';
 import { SKELETON_LABELS, canonicalKeypoints, checkedBase, type KeypointOut, type SkeletonLabel, type Usage } from '../../shared/pixellab';

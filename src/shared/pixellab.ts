@@ -1,4 +1,4 @@
-// PixelLab v2 wire types and pure helpers (docs/research/resolved-facts.md R1, R2, R4, R8).
+// PixelLab v2 wire types and pure helpers. API facts and rules: docs/pixellab.md.
 // Shared by main, preload and renderer: no runtime dependencies outside src/shared.
 import { isObj } from './json';
 
@@ -168,7 +168,8 @@ function checkText(value: unknown, name: string, max: number, errors: string[]):
 }
 
 /**
- * Pre-submit validation (R8). Returns human-readable errors; empty when the request is valid.
+ * Pre-submit validation (docs/pixellab.md "animate-with-skeleton-v3" and "Keypoints"). Returns human-readable errors;
+ * empty when the request is valid.
  * Defensive: safe to run on untrusted IPC input in main.
  */
 export function validateAnimateRequest(req: AnimateV3Request): string[] {

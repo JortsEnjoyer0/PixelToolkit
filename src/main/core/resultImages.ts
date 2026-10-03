@@ -1,6 +1,6 @@
-// Defensive decoder for animate-with-skeleton-v3 results (resolved-facts R7, U2): last_response.images may hold bare
-// base64 strings or objects ({type: 'base64' | 'rgba_bytes', base64, width?, height?}), with or without a data: prefix,
-// carrying PNG bytes or raw RGBA. Every frame comes out as PNG bytes.
+// Defensive decoder for animate-with-skeleton-v3 results (docs/pixellab.md "Background jobs", U2):
+// last_response.images may hold bare base64 strings or objects ({type: 'base64' | 'rgba_bytes', base64, width?,
+// height?}), with or without a data: prefix, carrying PNG bytes or raw RGBA. Every frame comes out as PNG bytes.
 import { isObj, posInt } from '../../shared/json';
 import { decodePng, encodePng, isPng } from '../png';
 

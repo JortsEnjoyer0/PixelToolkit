@@ -1,5 +1,6 @@
-// Entity names (folders, characters, animations) map 1:1 to Windows file names (PLAN §3 Names). One rule set for the
-// renderer (naming.validateName adds the sibling check) and main (imageImport.checkEntityName).
+// Entity names (folders, characters, animations) map 1:1 to Windows file names
+// (docs/architecture.md "Data root and files"). One rule set for the renderer (naming.validateName adds the sibling
+// check) and main (imageImport.checkEntityName).
 
 export const MAX_NAME_LENGTH = 64;
 
