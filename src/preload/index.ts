@@ -63,6 +63,10 @@ const api: PixelToolkitApi = {
     importReference: (charRel, animName) => ipcRenderer.invoke(IPC.imagesImportReference, charRel, animName),
     copyToAnimation: (charRel, srcFile, animName) => ipcRenderer.invoke(IPC.imagesCopyToAnimation, charRel, srcFile, animName)
   },
+  files: {
+    openImage: () => ipcRenderer.invoke(IPC.filesOpenImage),
+    savePng: (img, suggestedName) => ipcRenderer.invoke(IPC.filesSavePng, img, suggestedName)
+  },
   pixellab: {
     balance: () => ipcRenderer.invoke(IPC.plBalance),
     estimateSkeleton: (imageRel) => ipcRenderer.invoke(IPC.plEstimateSkeleton, imageRel)

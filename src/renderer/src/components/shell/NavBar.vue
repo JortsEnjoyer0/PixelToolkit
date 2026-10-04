@@ -102,12 +102,17 @@ const active = defineModel<string>({ required: true });
   background: var(--accent);
 }
 
+/* Long labels wrap to two centred lines (clamped); a word longer than the bar breaks */
 .nav-label {
+  display: -webkit-box;
   max-width: 100%;
   overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   line-height: 1.1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .nav-spacer {

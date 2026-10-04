@@ -1,10 +1,10 @@
 // PNG decode/encode and square padding (pngjs, pure JS). Used by main (images, jobs) and the tsx scripts,
 // so it imports nothing from electron and only relative paths.
 import { PNG } from 'pngjs';
+import type { RgbaImage } from '../shared/image';
 import { ESTIMATE_CANVAS_SIZES, MAX_CANVAS_SIZE } from '../shared/pixellab';
 
-/** Straight (non-premultiplied) 8-bit RGBA, row-major, width·height·4 bytes. */
-export interface RgbaImage { width: number; height: number; data: Uint8Array }
+export type { RgbaImage };
 
 export interface PaddedImage {
   img: RgbaImage;

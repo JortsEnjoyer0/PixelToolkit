@@ -1,6 +1,6 @@
 // Workspace store (WorkspaceStoreApi; docs/architecture.md "Workspace"): data/.ptk/workspace.json holds the open tabs,
 // the active tab, explorer expansion and width, the frame-track thumbnail height and the editor toolbar toggles (with
-// the ghost frame count). It is read once when the store is created and written debounced (createDirs, since .ptk may
+// the ghost frame count) of Skel Anim, and Img to PixelArt's sub-tool and output options. It is read once when the store is created and written debounced (createDirs, since .ptk may
 // not exist yet). Nothing is written before the read finished, so early update() calls never clobber the file; they are
 // merged on top of it instead.
 // restoreWorkspace() (reopening the saved tabs) lives in stores/tabs.ts.
@@ -9,6 +9,8 @@ import { onScopeDispose, ref, shallowRef } from 'vue';
 import { WORKSPACE_REL } from '@shared/dataPaths';
 import { isObj, plainCopy } from '@shared/json';
 import { deepFreeze } from '../core/util/freeze';
+import { snapColorLimit } from '../core/pixelart/quantize';
+import type { RectifyOptions } from '../core/pixelart/rectify';
 import { DEFAULT_DISPLAY, sanitizeGhostColor, sanitizeGhostCount, type DisplayOptions } from '../editor/types';
 import { useSettingsStore } from './settings';
 import type { WorkspaceState, WorkspaceStoreApi } from './types';
@@ -19,6 +21,12 @@ export const THUMB_HEIGHT = 104;
 export const THUMB_HEIGHT_MIN = 56;
 export const THUMB_HEIGHT_MAX = 240;
 const WRITE_DELAY_MS = 400;
+
+/** Img to PixelArt: the sub-tool shown first (tools/img2pixel/subtools.ts; an unknown saved id falls back to it). */
+export const DEFAULT_IMG2PIXEL_SUBTOOL = 'rectify';
+export const DEFAULT_RECTIFY_OPTIONS: Readonly<RectifyOptions> = {
+  removeBackground: true, makeSquare: false, mergeColors: true, snapToEdges: true, maxColors: 0
+};
 
 type WorkspacePatch = Partial<Omit<WorkspaceState, 'version'>>;
 
@@ -34,7 +42,8 @@ function defaultWorkspace(): WorkspaceState {
     expanded: [],
     display: { ...DEFAULT_DISPLAY, showFloor: ed.showFloor, showFrameImage: ed.showFrameImage, showCoco: ed.showCoco },
     explorerWidth: DEFAULT_EXPLORER_WIDTH,
-    thumbHeight: THUMB_HEIGHT
+    thumbHeight: THUMB_HEIGHT,
+    img2pixel: { subtool: DEFAULT_IMG2PIXEL_SUBTOOL, rectify: { ...DEFAULT_RECTIFY_OPTIONS } }
   };
 }
 
@@ -58,6 +67,32 @@ function parseDisplay(v: unknown, d: DisplayOptions): DisplayOptions {
   };
 }
 
+/**
+ * Every field of `d`, taken from `v` where it has the same type (numbers also finite), else the default. Unknown keys
+ * are dropped. For flat option objects (a sub-tool's options); range checks are the caller's.
+ */
+function sameTypeFields<T extends object>(v: unknown, d: T): T {
+  const raw = isObj(v) ? v : {};
+  const out = { ...d };
+  for (const k of Object.keys(d) as (keyof T & string)[]) {
+    const x = raw[k];
+    if (typeof x === typeof d[k] && (typeof x !== 'number' || Number.isFinite(x)))
+      out[k] = x as T[typeof k];
+  }
+  return out;
+}
+
+/** Img to PixelArt: any non-empty sub-tool id (the tool falls back for unknown ones), each sub-tool's options. */
+function parseImg2Pixel(v: unknown, d: WorkspaceState['img2pixel']): WorkspaceState['img2pixel'] {
+  const raw = isObj(v) ? v : {};
+  const rectify = sameTypeFields(raw.rectify, d.rectify);
+  return {
+    subtool: typeof raw.subtool === 'string' && raw.subtool !== '' ? raw.subtool : d.subtool,
+    // Max colours is one of the slider's settings (a hand-edited file could hold any number)
+    rectify: { ...rectify, maxColors: snapColorLimit(rectify.maxColors) }
+  };
+}
+
 /** Validates workspace.json; anything missing or malformed falls back to `d`. cocoEdit is never restored. */
 export function parseWorkspace(v: unknown, d: WorkspaceState): WorkspaceState {
   const raw = isObj(v) ? v : {};
@@ -70,7 +105,8 @@ export function parseWorkspace(v: unknown, d: WorkspaceState): WorkspaceState {
     expanded: strings(raw.expanded) ?? d.expanded,
     display: parseDisplay(raw.display, d.display),
     explorerWidth: typeof width === 'number' && Number.isFinite(width) && width > 0 ? width : d.explorerWidth,
-    thumbHeight: typeof thumb === 'number' && thumb >= THUMB_HEIGHT_MIN && thumb <= THUMB_HEIGHT_MAX ? thumb : d.thumbHeight
+    thumbHeight: typeof thumb === 'number' && thumb >= THUMB_HEIGHT_MIN && thumb <= THUMB_HEIGHT_MAX ? thumb : d.thumbHeight,
+    img2pixel: parseImg2Pixel(raw.img2pixel, d.img2pixel)
   };
 }
 

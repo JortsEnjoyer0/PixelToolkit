@@ -12,6 +12,7 @@ import {
   initJobs, jobReferencedUids, jobSubmitsSettled, pendingJobSubmits, registerJobsIpc, startJobPolling, stopJobPolling
 } from './jobs';
 import { installCloseProtocol, registerAppIpc } from './ipc/app';
+import { registerFilesIpc } from './ipc/files';
 import { registerFsIpc } from './ipc/fs';
 import { registerImagesIpc } from './ipc/images';
 import { registerPixelLabIpc } from './ipc/pixellab';
@@ -196,6 +197,7 @@ async function start(): Promise<void> {
   registerFsIpc();
   registerSettingsIpc();
   registerImagesIpc();
+  registerFilesIpc();
   registerPixelLabIpc();
   registerJobsIpc();
   registerAppIpc({

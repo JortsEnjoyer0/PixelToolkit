@@ -231,6 +231,10 @@ const api: PixelToolkitApi = {
     },
     copyToAnimation: async () => ({ uid: uid() })
   },
+  files: {
+    openImage: async () => null,
+    savePng: async () => null
+  },
   pixellab: {
     balance: async () => ({ ok: false, error: 'offline' }),
     estimateSkeleton: async () => ({ ok: false, error: 'offline' })

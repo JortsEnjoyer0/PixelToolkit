@@ -3,7 +3,7 @@
 // Drives zone-scoped shortcuts (services/shortcuts.ts). Installs its document listeners on first import.
 import { readonly, ref } from 'vue';
 
-export const ZONES = ['explorer', 'tabs', 'panel', 'editor', 'frametrack'] as const;
+export const ZONES = ['explorer', 'tabs', 'panel', 'editor', 'frametrack', 'img2pixel-panel', 'img2pixel-stage'] as const;
 export type Zone = typeof ZONES[number];
 
 const current = ref<Zone | null>(null);

@@ -1,4 +1,5 @@
-// Self-test of the document core (documents / tabs / workspace stores) against an in-memory window.api.
+// Self-test of the document core (documents / tabs / workspace stores) and Img to PixelArt's rectify store against an
+// in-memory window.api (rectify: with stubbed image decoding).
 // Run: npm run test:docs   (exit code 1 on any failure). Not part of the app bundle.
 import { fakeJob, fakeJobs, keydown, beforeUnload, memFs, StubInput } from './selftestEnv';
 import { createPinia, setActivePinia, type Pinia } from 'pinia';
@@ -13,7 +14,9 @@ import { editorInteracting } from '../../services/editorState';
 import { runCloseHandlers } from '../../services/lifecycle';
 import { mouseNotifyState } from '../../services/mouseNotify';
 import { toasts } from '../../services/toasts';
+import { normalizeGrid } from '../../core/pixelart/grid';
 import { GC_DELAY_MS, useDocumentsStore } from '../documents';
+import { DEFAULT_GRID, useRectifyStore } from '../rectify';
 import { useSettingsStore } from '../settings';
 import { installDocumentShortcuts, restoreWorkspace, useTabsStore } from '../tabs';
 import { parseWorkspace, useWorkspaceStore } from '../workspace';
@@ -64,6 +67,7 @@ watch(() => dialogs.stack.length, () => {
 }, { flush: 'sync' });
 const lastDialog = (): DialogEntry | undefined => seenDialogs[seenDialogs.length - 1];
 const lastNote = (): string | undefined => mouseNotifyState.notes[mouseNotifyState.notes.length - 1]?.text;
+const sameJson = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
 
 // ---------- fixtures ----------
 const CHAR = 'Townsfolk/Merchant';
@@ -145,6 +149,111 @@ async function main(): Promise<void> {
     const color = (v: unknown): string => parseWorkspace({ display: { ghostColor: v } }, d).display.ghostColor;
     check('ghost colour: default, restored lower-cased, malformed falls back',
       d.display.ghostColor === '#874040' && color('#FF8800') === '#ff8800' && color('red') === '#874040' && color('#ff880') === '#874040' && color(42) === '#874040');
+  }
+
+  section('workspace img2pixel');
+  {
+    const d = workspace.state;
+    const parsed = (img2pixel: unknown): typeof d.img2pixel => parseWorkspace({ img2pixel }, d).img2pixel;
+    const r = d.img2pixel.rectify;
+    check('defaults: Rectify To Grid, background removal, colour merging and snapping on, square off, no colour limit',
+      d.img2pixel.subtool === 'rectify' && r.removeBackground && r.mergeColors && r.snapToEdges && !r.makeSquare && r.maxColors === 0);
+    check('missing or malformed → defaults', sameJson(parsed(undefined), d.img2pixel) && sameJson(parsed('x'), d.img2pixel));
+    const saved = { subtool: 'later', rectify: { removeBackground: false, makeSquare: true, mergeColors: false, snapToEdges: false, maxColors: 64 } };
+    check('saved sub-tool and options restored', sameJson(parsed(saved), saved));
+    check('max colours snaps to a slider setting', parsed({ rectify: { maxColors: 50 } }).rectify.maxColors === 48
+      && parsed({ rectify: { maxColors: -3 } }).rectify.maxColors === 0);
+    const mixed = parsed({ subtool: '', rectify: { removeBackground: 'no', makeSquare: true, extra: 1 } });
+    check('fields fall back one by one, unknown keys dropped', mixed.subtool === 'rectify' && mixed.rectify.removeBackground
+      && mixed.rectify.makeSquare && mixed.rectify.mergeColors && mixed.rectify.snapToEdges && mixed.rectify.maxColors === 0
+      && !('extra' in mixed.rectify));
+  }
+
+  section('rectify store (Img to PixelArt)');
+  {
+    // Decoding stubs: a blob's text is "<w>x<h>" (or "<w>x<h>@<ms>" for a slow decode); anything else is not an image
+    const g = globalThis as unknown as Record<string, unknown>;
+    const closed: string[] = [];
+    g.requestAnimationFrame = (cb: () => void) => setTimeout(cb, 0);
+    g.createImageBitmap = async (blob: Blob) => {
+      const text = await blob.text();
+      const m = /^(\d+)x(\d+)(?:@(\d+))?$/.exec(text);
+      if (!m)
+        throw new Error('undecodable');
+      await sleep(Number(m[3] ?? 0));
+      return { width: Number(m[1]), height: Number(m[2]), close: () => closed.push(text) };
+    };
+    g.OffscreenCanvas = class {
+      getContext(): object {
+        return { drawImage: () => undefined, getImageData: (_x: number, _y: number, w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }) };
+      }
+    };
+    const revoked: string[] = [];
+    const revoke = URL.revokeObjectURL;
+    URL.revokeObjectURL = (url: string): void => {
+      revoked.push(url);
+      revoke(url);
+    };
+    const blob = (text: string): Blob => new Blob([text]);
+
+    const rect = useRectifyStore();
+    check('starts empty with the default grid and workspace options', rect.source === null && sameJson(rect.grid, DEFAULT_GRID)
+      && rect.outputSize === null && sameJson(rect.options, workspace.state.img2pixel.rectify) && await rect.rectify() === null);
+    rect.setGrid({ offsetX: 17.5, offsetY: -1 });
+    check('setGrid wraps offsets into [0, size)', rect.grid.offsetX === 1.5 && rect.grid.offsetY === 15 && Object.isFrozen(rect.grid));
+    rect.nudge(-2, 1);
+    check('nudge moves by whole px and wraps', rect.grid.offsetX === 15.5 && rect.grid.offsetY === 0);
+    rect.setGrid({ size: 1.234 });
+    check('size clamped and rounded, offsets re-wrapped', sameJson(rect.grid, normalizeGrid({ size: 2, offsetX: 15.5, offsetY: 0 })));
+    rect.setGrid({ size: 4, offsetX: 0 });
+
+    rect.setOptions({ makeSquare: true });
+    check('options live in the workspace', rect.options.makeSquare && workspace.state.img2pixel.rectify.makeSquare
+      && workspace.state.img2pixel.rectify.removeBackground);
+    await workspace.flush();
+    check('…and are written to workspace.json', memFs.json<{ img2pixel: { rectify: { makeSquare: boolean } } }>(WORKSPACE_REL).img2pixel.rectify.makeSquare);
+    rect.setOptions({ makeSquare: false });
+
+    const slow = rect.loadBlob(blob('16x16@30'), 'slow.png');
+    check('loading while decoding', rect.loading);
+    await rect.loadBlob(blob('16x8'), 'fast.png');
+    check('the newer load wins', rect.source?.name === 'fast.png' && !rect.loading);
+    await slow;
+    check('a superseded load is dropped and its bitmap closed', rect.source?.name === 'fast.png' && closed.includes('16x16@30'));
+    check('output size follows the grid', sameJson(rect.outputSize, { width: 4, height: 2 }));
+    const rectifying = rect.rectify();
+    check('rectifying flag set before rectify runs', rect.rectifying);
+    const result = await rectifying;
+    check('rectify gives one px per cell', !rect.rectifying && result?.image.width === 4 && result.image.height === 2);
+
+    const estimating = rect.runEstimate();
+    check('estimating flag set before the estimate runs', rect.estimating && rect.lastEstimate === null);
+    await estimating;
+    const est = rect.lastEstimate;
+    check('estimate adopted as the grid', !rect.estimating && est !== null && sameJson(rect.grid, normalizeGrid(est)));
+
+    const fast = rect.source;
+    await rejects('not an image → user-facing error', rect.loadBlob(blob('nope'), 'notes.txt'), /"notes\.txt" is not an image/);
+    await rejects('larger than MAX_IMAGE_SIDE → error names size and limit', rect.loadBlob(blob('9000x10'), 'wide.png'), /9000 × 10 px.*8192/);
+    await rejects('more than MAX_IMAGE_PIXELS → error', rect.loadBlob(blob('5000x5000'), 'big.png'), /megapixels/);
+    check('failed loads keep the source and close their bitmaps', rect.source === fast && !rect.loading
+      && closed.includes('9000x10') && closed.includes('5000x5000'));
+
+    const files = window.api.files;
+    window.api.files = { ...files, openImage: async () => ({ name: 'opened.png', bytes: new TextEncoder().encode('8x8') }) };
+    await rect.openFile();
+    check('openFile adopts the picked file', rect.source?.name === 'opened.png' && rect.source.image.width === 8);
+    check('a new image clears the estimate; the old URL is revoked and its bitmap closed', rect.lastEstimate === null
+      && fast !== null && revoked.includes(fast.url) && closed.includes('16x8'));
+    window.api.files = { ...files, openImage: async () => null };
+    await rect.openFile();
+    check('a cancelled dialog changes nothing', rect.source?.name === 'opened.png');
+    window.api.files = files;
+
+    const opened = rect.source;
+    rect.$dispose();
+    check('disposing the store releases the source', opened !== null && revoked.includes(opened.url) && closed.includes('8x8'));
+    URL.revokeObjectURL = revoke;
   }
 
   section('load + save round trip');
@@ -428,7 +537,9 @@ async function main(): Promise<void> {
     && (walk as DocInternal).diskMtime === (memFs.get(CYCLE) as { mtime: number }).mtime);
 
   section('shortcuts');
-  installDocumentShortcuts();
+  /** Skel Anim is the shown tool (App.vue's predicate). */
+  let skelAnimShown = true;
+  installDocumentShortcuts(() => skelAnimShown);
   tabs.activate(walk.id);
   walk.apply('Rotate Left Forearm', (s) => ({ ...s, seed: 14 }));
   check('Ctrl+Z handled', keydown({ key: 'z', ctrl: true }));
@@ -447,6 +558,13 @@ async function main(): Promise<void> {
   check('Ctrl+S allowed in text fields', keydown({ key: 's', ctrl: true, target: input }));
   await (walk as DocInternal).io.drain();
   check('Ctrl+S blurred the field and saved', input.blurred === 1 && !walk.dirty.value);
+  skelAnimShown = false;
+  walk.apply('Hidden tool', (s) => ({ ...s, seed: 20 }));
+  check('another tool shown: Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z / Ctrl+S decline', !keydown({ key: 'z', ctrl: true })
+    && !keydown({ key: 'y', ctrl: true }) && !keydown({ key: 'Z', ctrl: true, shift: true }) && !keydown({ key: 's', ctrl: true })
+    && walk.state.value.seed === 20 && walk.dirty.value);
+  skelAnimShown = true;
+  walk.undo();
   answers.push('cancel');
   void dialogs.confirm({ title: 'modal', message: 'x' });
   walk.apply('Under modal', (s) => ({ ...s, seed: 15 }));

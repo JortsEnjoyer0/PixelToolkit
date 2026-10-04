@@ -1,17 +1,20 @@
 // npm run test:main (or npx tsx scripts/test-main-fs.ts)
 // Node checks for the electron-free main-process cores: sandboxed fs (atomic writes, renames, deleteFiles, scanData,
-// listDir, temp cleanup, junction guard), the asset URL parser, PNG import / copy, the session-created sweep and the
-// PixelLab client mapping (fake fetch). No Electron, no network. Temp dirs go under PT_TEST_TMP (default: os.tmpdir()).
+// listDir, temp cleanup, junction guard), the asset URL parser, PNG import / copy, image files outside the data root
+// (open limits, RGBA checks, save names, PNG writes), the session-created sweep and the PixelLab client mapping (fake
+// fetch). No Electron, no network. Temp dirs go under PT_TEST_TMP (default: os.tmpdir()).
 import { promises as fsp, existsSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { IPC_ERROR_PREFIX, type ScanNode } from '../src/shared/api';
 import { SESSION_CREATED_REL, animImageFileName, baseImageFileName } from '../src/shared/dataPaths';
+import { MAX_IMAGE_SIDE, MAX_OPEN_IMAGE_BYTES } from '../src/shared/image';
 import { SKELETON_LABELS } from '../src/shared/pixellab';
 import { assetRelFromUrl, isImmutableAsset } from '../src/main/core/assetPath';
 import {
   cleanupStaleTmp, deleteFiles, listDir, makeDir, readJson, renameEntry, resolveChecked, scanData, setDataRoot, writeBinary, writeJson
 } from '../src/main/core/dataFs';
+import { checkRgbaImage, pngFileName, readImageFile, writePngFile } from '../src/main/core/imageFiles';
 import { copyToAnimation, importImageFile, prepareImport, readCanvasPng } from '../src/main/core/imageImport';
 import { PixelLabClient, type FetchLike } from '../src/main/core/pixellabClient';
 import { listSessionCreated, sweepSessionCreated } from '../src/main/core/sessionCreated';
@@ -234,6 +237,107 @@ async function testImages(base: string): Promise<void> {
     && listed[1].ownerRel === 'Town/Merchant/Walk South.json' && listed[1].uid === copy.uid, JSON.stringify(listed));
 }
 
+/** The message `fn` throws, or '' when it returns. */
+function thrown(fn: () => unknown): string {
+  try {
+    fn();
+    return '';
+  } catch (e) {
+    return (e as Error).message;
+  }
+}
+
+async function testImageFiles(base: string): Promise<void> {
+  console.log('image files (outside the data root)');
+  const dir = path.join(base, 'files');
+  const at = (name: string): string => path.join(dir, name);
+  await fsp.mkdir(dir, { recursive: true });
+
+  // readImageFile: the extension (any case) and the size are checked before reading
+  const png = solidPng(3, 2);
+  await write(at('sprite.PNG'), png);
+  const opened = await readImageFile(at('sprite.PNG'));
+  check('readImageFile name and bytes', opened.name === 'sprite.PNG' && opened.bytes instanceof Uint8Array && Buffer.from(opened.bytes).equals(Buffer.from(png)));
+  await write(at('scan.tiff'), png);
+  await rejects('readImageFile rejects other extensions', readImageFile(at('scan.tiff')), /^Could not open "scan\.tiff": \.tiff files are not supported/);
+  await write(at('noext'), png);
+  await rejects('readImageFile rejects a missing extension', readImageFile(at('noext')), /^Could not open "noext": files without an extension/);
+  const fh = await fsp.open(at('huge.webp'), 'w');
+  await fh.truncate(MAX_OPEN_IMAGE_BYTES + 1); // extends without writing the bytes
+  await fh.close();
+  await rejects('readImageFile rejects files above MAX_OPEN_IMAGE_BYTES', readImageFile(at('huge.webp')), /^Could not open "huge\.webp": the file is too large/);
+  await fsp.rm(at('huge.webp'));
+  await write(at('empty.gif'), '');
+  await rejects('readImageFile rejects an empty file', readImageFile(at('empty.gif')), /^Could not open "empty\.gif": the file is empty/);
+  await fsp.mkdir(at('folder.png'));
+  await rejects('readImageFile rejects a dir', readImageFile(at('folder.png')), /^Could not open "folder\.png": not a file/);
+  await rejects('readImageFile of a missing file', readImageFile(at('gone.jpg')), /^Could not open "gone\.jpg": the file no longer exists/);
+
+  // checkRgbaImage: untrusted IPC input
+  const valid = { width: 2, height: 1, data: new Uint8Array(8), extra: 'x' };
+  const checked = checkRgbaImage(valid);
+  check('checkRgbaImage accepts a valid image (other fields dropped)', checked.width === 2 && checked.height === 1 && checked.data === valid.data && !('extra' in checked));
+  check('checkRgbaImage accepts MAX_IMAGE_SIDE', checkRgbaImage({ width: MAX_IMAGE_SIDE, height: 1, data: new Uint8Array(MAX_IMAGE_SIDE * 4) }).width === MAX_IMAGE_SIDE);
+  const invalid: [string, unknown, RegExp][] = [
+    ['a wrong data length', { width: 2, height: 2, data: new Uint8Array(8) }, /expected 16/],
+    ['a non-integer width', { width: 1.5, height: 2, data: new Uint8Array(12) }, /whole numbers/],
+    ['a zero height', { width: 2, height: 0, data: new Uint8Array(0) }, /whole numbers/],
+    ['an oversize side', { width: MAX_IMAGE_SIDE + 1, height: 1, data: new Uint8Array((MAX_IMAGE_SIDE + 1) * 4) }, /whole numbers/],
+    ['a string width', { width: '2', height: 1, data: new Uint8Array(8) }, /whole numbers/],
+    ['number array data', { width: 1, height: 1, data: [0, 0, 0, 0] }, /must be a Uint8Array/],
+    ['Uint8ClampedArray data', { width: 1, height: 1, data: new Uint8ClampedArray(4) }, /must be a Uint8Array/],
+    ['null', null, /expected \{ width/],
+    ['an array', [2, 1], /expected \{ width/],
+    ['a typed array', new Uint8Array(8), /expected \{ width/]
+  ];
+  for (const [what, v, re] of invalid) {
+    const msg = thrown(() => checkRgbaImage(v));
+    check(`checkRgbaImage rejects ${what}`, re.test(msg), msg);
+  }
+
+  // pngFileName: the save dialog's default name
+  const names: [string, string][] = [
+    ['sprite', 'sprite.png'], ['sprite.png', 'sprite.png'], ['Sprite.PNG', 'Sprite.png'], ['photo.jpeg', 'photo.png'],
+    ['archive.tar', 'archive.tar.png'], ['a<b>c:d"e/f\\g|h?i*j', 'abcdefghij.png'], ['bad\u0000na\u001fme\u007f', 'badname.png'],
+    ['  name . . ', 'name.png'], ['name .png. ', 'name.png'], ['..hidden', 'hidden.png'], ['', 'pixelart.png'],
+    ['   ', 'pixelart.png'], ['.png', 'pixelart.png'], ['???', 'pixelart.png'], ['CON', '_CON.png'], ['nul.png', '_nul.png'],
+    ['com1.tar', '_com1.tar.png'], ['console', 'console.png'], ['Zwölf ✨', 'Zwölf ✨.png']
+  ];
+  for (const [input, want] of names)
+    check(`pngFileName(${JSON.stringify(input)})`, pngFileName(input) === want, pngFileName(input));
+  const long = pngFileName('a'.repeat(300));
+  check('pngFileName caps the length', /^a+\.png$/.test(long) && long.length < 200, long);
+  const cut = pngFileName(`${'a'.repeat(long.length - 5)} ${'b'.repeat(50)}`);
+  check('pngFileName trims edge spaces after the cut', cut === long.slice(1), cut);
+  const emoji = pngFileName('😀'.repeat(300));
+  check('pngFileName cuts whole code points', Array.from(emoji.slice(0, -4)).every((ch) => ch === '😀'), emoji);
+
+  // writePngFile: lossless RGBA PNG, atomic, never creates folders
+  const px = new Uint8Array([255, 0, 0, 255, 10, 20, 30, 0, 40, 50, 60, 128, 1, 2, 3, 254]);
+  const img = { width: 2, height: 2, data: px };
+  check('writePngFile resolves the path written', await writePngFile(at('out.png'), img) === at('out.png'));
+  const back = decodePng(new Uint8Array(readFileSync(at('out.png'))));
+  check('writePngFile round-trip is exact (incl. alpha 0 and 128)', back.width === 2 && back.height === 2 && Buffer.from(back.data).equals(Buffer.from(px)));
+  await writePngFile(at('out.png'), { width: 1, height: 1, data: new Uint8Array([9, 9, 9, 9]) });
+  check('writePngFile replaces the chosen file', decodePng(new Uint8Array(readFileSync(at('out.png')))).width === 1);
+  const appended = await writePngFile(at('plain'), img);
+  check('writePngFile appends .png to a name without extension', appended === at('plain.png') && existsSync(appended) && !existsSync(at('plain')));
+  check('writePngFile leaves no temp file', (await fsp.readdir(dir)).every((n) => !n.endsWith('.tmp')));
+  await rejects('writePngFile never creates folders', writePngFile(path.join(dir, 'missing', 'x.png'), img), /no longer exists/);
+  check('writePngFile did not create the folder', !existsSync(at('missing')));
+  await rejects('writePngFile needs an absolute path', writePngFile('relative.png', img), /absolute path/);
+  check('writePngFile drops trailing dots and spaces like Windows', await writePngFile(at('dots.png. '), img) === at('dots.png') && existsSync(at('dots.png')));
+  check('…and appends .png after them', await writePngFile(at('bare. '), img) === at('bare.png') && existsSync(at('bare.png')));
+  check('…without leaving a temp file', (await fsp.readdir(dir)).every((n) => !n.endsWith('.tmp')));
+  await writePngFile(at('ro.png'), img);
+  await fsp.chmod(at('ro.png'), 0o444);
+  await rejects('a failed save names the file and the reason, not the temp file', writePngFile(at('ro.png'), img), /^Could not save "ro\.png": the file is read-only/);
+  await fsp.chmod(at('ro.png'), 0o666);
+  const t0 = performance.now();
+  const spaced = pngFileName(`a${' '.repeat(200000)}b`);
+  check('pngFileName bounds untrusted input (no quadratic backtracking)', performance.now() - t0 < 500 && spaced === 'a.png', spaced);
+}
+
 async function testSweep(base: string): Promise<void> {
   console.log('session-created sweep');
   const root = await setDataRoot(path.join(base, 'sweep'));
@@ -355,6 +459,7 @@ async function main(): Promise<void> {
     await testScan(base);
     testAssetUrls();
     await testImages(base);
+    await testImageFiles(base);
     await testSweep(base);
     await testPixelLabClient();
   } finally {

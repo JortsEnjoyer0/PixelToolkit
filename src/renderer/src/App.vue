@@ -2,7 +2,8 @@
 // App shell: NavBar + the active tool (kept alive), the global hosts (context menu, dialogs, toasts, mouse notes;
 // the tooltip element is created by v-tooltip on first use), keyboard / focus-zone services, settings loading and
 // the close handshake (services/lifecycle.ts). Tools mount once settings and the workspace are read, so their stores
-// see real values; then the saved tabs reopen and the jobs store starts (startup()).
+// see real values; then the saved tabs reopen and the jobs store starts (startup()). The document shortcuts
+// (Ctrl+S / Z / Y) act only while Skel Anim is the active tool.
 import { computed, onBeforeUnmount, ref } from 'vue';
 import ContextMenuHost from './components/common/ContextMenuHost.vue';
 import DialogHost from './components/common/DialogHost.vue';
@@ -19,7 +20,7 @@ import { initJobs } from './stores/jobs';
 import { useSettingsStore } from './stores/settings';
 import { installDocumentShortcuts, restoreWorkspace } from './stores/tabs';
 import { useWorkspaceStore } from './stores/workspace';
-import { DEFAULT_TOOL_ID, findTool } from './tools/registry';
+import { DEFAULT_TOOL_ID, SKELANIM_TOOL_ID, findTool } from './tools/registry';
 
 installFocusZone();
 installShortcuts();
@@ -44,7 +45,7 @@ async function startup(): Promise<void> {
     reportError(e, 'Could not read settings');
   }
   try {
-    stopDocKeys = installDocumentShortcuts();
+    stopDocKeys = installDocumentShortcuts(() => activeToolId.value === SKELANIM_TOOL_ID);
     await useWorkspaceStore().whenLoaded();
   } finally {
     ready.value = true;

@@ -1,6 +1,7 @@
 // Tool registry: one entry per top-level tool, shown in the NavBar and kept alive in App.vue's tool space.
 import { markRaw, type Component } from 'vue';
-import { Bone } from '@lucide/vue';
+import { Bone, Grid3x3 } from '@lucide/vue';
+import Img2PixelTool from './img2pixel/Img2PixelTool.vue';
 import SkelAnimTool from './skelanim/SkelAnimTool.vue';
 
 export interface ToolDef {
@@ -12,8 +13,12 @@ export interface ToolDef {
   component: Component;
 }
 
+/** Skel Anim's id: the document shortcuts (Ctrl+S / Z / Y) act only while it is the active tool (App.vue). */
+export const SKELANIM_TOOL_ID = 'skelanim';
+
 export const TOOLS: readonly ToolDef[] = [
-  { id: 'skelanim', label: 'Skel Anim', icon: markRaw(Bone), component: markRaw(SkelAnimTool) }
+  { id: SKELANIM_TOOL_ID, label: 'Skel Anim', icon: markRaw(Bone), component: markRaw(SkelAnimTool) },
+  { id: 'img2pixel', label: 'Img to PixelArt', icon: markRaw(Grid3x3), component: markRaw(Img2PixelTool) }
 ];
 
 export const DEFAULT_TOOL_ID = TOOLS[0].id;

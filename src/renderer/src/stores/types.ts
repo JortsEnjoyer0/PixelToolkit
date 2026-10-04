@@ -7,8 +7,11 @@ import type { ComputedRef, Ref, ShallowRef } from 'vue';
 import type { ScanKind, ScanNode } from '@shared/api';
 import type { JobUpdateEvent, SubmitAnimateResult } from '@shared/jobs';
 import type { KeypointOut } from '@shared/pixellab';
+import type { RgbaImage } from '@shared/image';
 import type { AppSettings, SettingsPatch } from '@shared/settings';
 import type { CharacterMeta, FrameTarget, UndoableState } from '../core/model';
+import type { GridEstimate, GridSpec } from '../core/pixelart/grid';
+import type { RectifyOptions, RectifyResult } from '../core/pixelart/rectify';
 import type { UndoStack } from '../core/undo/UndoStack';
 import type { DisplayOptions } from '../editor/types';
 
@@ -242,6 +245,8 @@ export interface WorkspaceState {
   explorerWidth: number;
   /** Frame-track thumbnail height, CSS px (56..240). */
   thumbHeight: number;
+  /** Img to PixelArt: the active sub-tool id and the Rectify To Grid output options. */
+  img2pixel: { subtool: string; rectify: RectifyOptions };
 }
 
 /** stores/workspace.ts. */
@@ -249,4 +254,43 @@ export interface WorkspaceStoreApi {
   readonly state: Readonly<WorkspaceState>;
   /** Merge and schedule a debounced write. */
   update(patch: Partial<Omit<WorkspaceState, 'version'>>): void;
+}
+
+/** Img to PixelArt's source image. Held markRaw: never reactive inside. */
+export interface SourceImage {
+  /** File name (a pasted clipboard bitmap arrives as Chromium's "image.png"). */
+  name: string;
+  image: RgbaImage;
+  /** For drawing; closed when the source is replaced. */
+  bitmap: ImageBitmap;
+  /** Object URL of the original file for <img> thumbnails; revoked when the source is replaced. */
+  url: string;
+}
+
+/** stores/rectify.ts: Rectify To Grid state (docs/img2pixel/img2pixel.md). */
+export interface RectifyStoreApi {
+  readonly source: SourceImage | null;
+  readonly grid: Readonly<GridSpec>;
+  /** Output options, persisted in the workspace (img2pixel.rectify). */
+  readonly options: Readonly<RectifyOptions>;
+  /** The last estimate for the current source; null before the first one and after a new image loads. */
+  readonly lastEstimate: GridEstimate | null;
+  readonly loading: boolean;
+  readonly estimating: boolean;
+  readonly rectifying: boolean;
+  /** Output size for the current source, grid and makeSquare; null without a source. */
+  readonly outputSize: { width: number; height: number } | null;
+  /** Decode and adopt an image (open dialog, drop, paste). Rejects with a user-facing message when it cannot. */
+  loadBlob(blob: Blob, name: string): Promise<void>;
+  /** files.openImage → loadBlob; nothing happens when the dialog is cancelled. */
+  openFile(): Promise<void>;
+  /** estimateGrid on the source, adopted as the grid. */
+  runEstimate(): Promise<void>;
+  /** Merge, then normalizeGrid. */
+  setGrid(patch: Partial<GridSpec>): void;
+  /** Move the grid offset by whole px (wraps into [0, size)). */
+  nudge(dx: number, dy: number): void;
+  setOptions(patch: Partial<RectifyOptions>): void;
+  /** Rectify the source with the current grid and options (after a paint, like runEstimate); null without a source. */
+  rectify(): Promise<RectifyResult | null>;
 }

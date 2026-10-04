@@ -2,10 +2,11 @@
 // Range slider + number entry. v-model updates live (slider drag, valid typing, arrow keys); 'commit' fires once per
 // finished edit: slider change (release / key), Enter or blur in the field. Undo-coalescing callers apply on
 // update:modelValue with a mergeKey and seal on commit. Values are clamped to [min, max] and snapped to step.
-// Field keys: Up / Down step (Shift ×10), Enter commits, Escape reverts to the value at focus. With `wheel`, the mouse
-// wheel over the field steps too: one step per notch, small touchpad deltas add up, Ctrl + wheel ignored (each step
-// commits unless the field is being edited).
-import { computed, ref, watch } from 'vue';
+// Field keys: Up / Down step by `nudge` (default: step; Shift ×10), Enter commits, Escape reverts to the value at
+// focus. With `wheel`, the mouse wheel over the field steps too: one step per notch, small touchpad deltas add up, Ctrl + wheel ignored (each step
+// commits unless the field is being edited). Controlled: after a commit the field shows the parent's value, also when the
+// parent stored a different one (wrapped, normalized) and the prop therefore did not change.
+import { computed, nextTick, ref, watch } from 'vue';
 import { clamp } from '../../core/util/math';
 
 const props = withDefaults(defineProps<{
@@ -25,6 +26,8 @@ const props = withDefaults(defineProps<{
   label?: string;
   /** The mouse wheel over the number field steps the value (Shift ×10). */
   wheel?: boolean;
+  /** Arrow-key and wheel step when it should be coarser than `step` (which typed values still snap to). */
+  nudge?: number;
 }>(), { step: 1, slider: true, size: 'md' });
 
 const emit = defineEmits<{ 'update:modelValue': [value: number]; commit: [value: number] }>();
@@ -81,6 +84,15 @@ function commit(): void {
     return;
   dirty = false;
   emit('commit', last);
+  // Once the parent has applied the edit, show what it kept
+  void nextTick(() => {
+    if (props.modelValue === last)
+      return;
+    last = props.modelValue;
+    text.value = format(last);
+    if (editing.value)
+      start = last;
+  });
 }
 
 // ---- slider ----
@@ -142,7 +154,7 @@ function onKeydown(e: KeyboardEvent): void {
 /** One step up or down from the typed value (Shift ×10). */
 function stepFrom(dir: 1 | -1, big: boolean): void {
   const typed = parse(text.value);
-  update((Number.isFinite(typed) ? typed : last) + dir * props.step * (big ? 10 : 1));
+  update((Number.isFinite(typed) ? typed : last) + dir * (props.nudge ?? props.step) * (big ? 10 : 1));
   text.value = format(last);
 }
 

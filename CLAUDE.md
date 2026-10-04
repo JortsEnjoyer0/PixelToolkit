@@ -3,18 +3,21 @@
 Windows desktop toolkit (Electron + Vue 3 + TypeScript + three.js) of tools for sprites, pixel art and 3D pixel art,
 used in downstream pipelines and as a testbed for new workflows. Each tool is a page reached from the vertical nav bar.
 
-**Tools:** Skel Anim (Skeletal Animator). Characters and animations in a file-mirroring explorer. A 3D rig editor
-(Unity-style humanoid) whose poses are projected to 2D OpenPose/COCO-18 keypoints and sent to PixelLab's
-skeleton-v3 API, which returns sprite frames.
+**Tools:**
+- Skel Anim (Skeletal Animator). Characters and animations in a file-mirroring explorer. A 3D rig editor (Unity-style
+  humanoid) whose poses are projected to 2D OpenPose/COCO-18 keypoints and sent to PixelLab's skeleton-v3 API, which
+  returns sprite frames.
+- Img to PixelArt. Sub-tools that turn images the user opens, drops or pastes (never `data/`) into pixel art. Rectify
+  To Grid finds the fake-pixel size and grid of pseudo pixel art (e.g. AI images) and outputs one px per grid cell.
 
 ## Repo map
 
 | Path | What |
 |---|---|
-| `src/main/` | Electron main. `core/` holds the electron-free, node-tested logic (fs sandbox, job service, PixelLab client, image import); `ipc/` holds thin handlers |
+| `src/main/` | Electron main. `core/` holds the electron-free, node-tested logic (fs sandbox, job service, PixelLab client, image import, image files outside the data root); `ipc/` holds thin handlers |
 | `src/preload/` | `window.api` bridge (contextBridge; the renderer has no Node access) |
 | `src/shared/` | Types and constants used by both processes: IPC contract `api.ts`, PixelLab wire types, jobs, settings, data paths |
-| `src/renderer/src/core/` | Framework-free logic: persisted model, state producers, rig math, undo |
+| `src/renderer/src/core/` | Framework-free logic: persisted model, state producers, rig math, undo, pixel-art algorithms (`pixelart/`) |
 | `src/renderer/src/editor/` | three.js viewport. Non-reactive, imports no stores |
 | `src/renderer/src/stores/` | Pinia stores |
 | `src/renderer/src/services/` | Global UI singletons: dialogs, toasts, context menu, shortcuts, … |
@@ -22,7 +25,7 @@ skeleton-v3 API, which returns sprite frames.
 | `src/renderer/src/tools/` | `registry.ts`, plus one folder per tool |
 | `src/renderer/src/styles/` | Theme tokens and shared control CSS |
 | `scripts/` | Node test runners and the fixture fetcher |
-| `testbed/fixtures/`, `assets/test_imgs/` | Padded test sprites and cached PixelLab estimates; their source PNGs |
+| `testbed/fixtures/`, `assets/test_imgs/` | Padded test sprites and cached PixelLab estimates; their source PNGs; `fakepixelart/`: real AI pseudo pixel art for Img to PixelArt |
 | `build/`, `resources/` | Packaging only: electron-builder icons and entitlements; the app icon |
 | `data/`, `appSettings.config` | User data and settings with API keys. Both gitignored |
 | `archive/` | Outdated build history, not a source of truth. Do not read it unless asked |
@@ -41,6 +44,7 @@ components have none). Keep it accurate when you change a file, and give new fil
 | Anything that calls PixelLab | `docs/pixellab.md` |
 | Skel Anim features: explorer, panel, frame track, documents/undo/saving/jobs | `docs/skelanim/skelanim.md` |
 | Rig math, projection, lifting, calibration, how the editor draws the rig | `docs/skelanim/rig.md` |
+| Img to PixelArt: sub-tools, Rectify To Grid's panel, stage, preview, store and algorithms | `docs/img2pixel/img2pixel.md` |
 
 `src/main/`, `src/renderer/src/stores/`, `src/renderer/src/editor/` and `src/renderer/src/core/rig/` each have a short
 `CLAUDE.md` with their invariants. It loads automatically when you work in that folder.
@@ -51,7 +55,7 @@ components have none). Keep it accurate when you change a file, and give new fil
 npm run dev            # app with HMR (dev:debug adds CDP on 9222; dev:testbed opens the rig testbed page)
 npm run typecheck      # node + web (vue-tsc) + scripts
 npm run lint           # ESLint incl. CodeGuide rules (lint:fix autofixes)
-npm test               # all node suites: test:rig, test:main, test:docs, test:playback (no Electron, no API calls)
+npm test               # all node suites: test:rig, test:main, test:docs, test:playback, test:pixelart (no Electron, no API calls)
 ```
 
 A code change is done when typecheck, lint and `npm test` pass. A UI change must also be checked in the running app

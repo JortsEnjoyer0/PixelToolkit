@@ -10,7 +10,8 @@ const props = withDefaults(defineProps<{
   title: string;
   icon?: Component;
   iconTone?: 'danger' | 'warning' | 'default';
-  size?: 'sm' | 'default' | 'md' | 'lg';
+  /** Width: sm 380, default 440, md 520, lg 640 px, xl min(960 px, 92vw) (viewers). */
+  size?: 'sm' | 'default' | 'md' | 'lg' | 'xl';
   /** Show the × button (emits 'close'). */
   closable?: boolean;
 }>(), { iconTone: 'default', size: 'default', closable: true });

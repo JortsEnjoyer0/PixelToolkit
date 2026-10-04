@@ -483,12 +483,6 @@ function setSendDepth(sendDepth: boolean): void {
 </template>
 
 <style scoped>
-.control-panel {
-  flex: 0 0 auto;
-  width: var(--panel-width);
-  border-right: 1px solid var(--border);
-}
-
 .control-panel-first {
   padding-top: var(--space-3);
   gap: var(--space-1);

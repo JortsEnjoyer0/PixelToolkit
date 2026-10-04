@@ -12,7 +12,7 @@ before running the app to verify a change. The other docs are listed in the root
 | TypeScript | `~6.0.3`, not 7 | TS 7 (Go) has no JS compiler API, so `vue-tsc` 3 and typescript-eslint cannot run on it. typescript-eslint's peer range also ends below 6.1 |
 | Vue, Pinia | `^3.5` (`<script setup lang="ts">`), `^4` | Pinia 4 is ESM-only, same API |
 | three | `^0.186` | Imported only in `src/renderer/src/editor/` |
-| pngjs, `@lucide/vue`, `vue-draggable-plus` | `^7`, `^1`, `^0.6` | Pure-JS PNG, imported only by `src/main/png.ts` (main and scripts); icons (not the deprecated `lucide-vue-next`); drag-and-drop reordering of tabs and frame-track frames |
+| pngjs, `@lucide/vue`, `vue-draggable-plus` | `^7`, `^1`, `^0.6` | Pure-JS PNG, imported only by `src/main/png.ts` (main and scripts: imports, job results, saved tool output); icons (not the deprecated `lucide-vue-next`); drag-and-drop reordering of tabs and frame-track frames |
 | tsx, Playwright | dev | Node test runners; `connectOverCDP` automation (no browser download needed) |
 
 - TS projects: `tsconfig.node.json` (main, preload, shared), `tsconfig.web.json` (renderer, shared) and
@@ -36,8 +36,13 @@ Renderer: `contextIsolation`, `sandbox: true`, no `nodeIntegration`, in-app navi
     returns `Result<T>` (`{ ok: false, status?, error }`), never rejects; a throw becomes `{ ok: false }`.
   - `handle` / `handleWithEvent` for the rest: a failure rejects with a user-facing `Error` message, which the renderer
     lets reach the global handler (`services/errors.ts`) unless it needs context (CodeGuide: no blanket try/catch).
-- Arguments are untrusted: main re-checks paths (sandbox), entity names (`checkEntityName`) and job input
-  (`validateSubmitInput`). Only plain data crosses IPC: send `plainCopy()` or serialized objects, never Vue proxies.
+- Arguments are untrusted: main re-checks paths (sandbox), entity names (`checkEntityName`), job input
+  (`validateSubmitInput`) and images (`checkRgbaImage`, before any dialog opens). Only plain data crosses IPC: send
+  `plainCopy()` or serialized objects, never Vue proxies.
+- Outside the data root, main reads and writes only a path the user picked in a native dialog (`images.import*`,
+  `files.*`): the renderer never supplies one. `files.*` (`ipc/files.ts`, `core/imageFiles.ts`) serves tools working on
+  arbitrary images: `openImage` returns the undecoded bytes (the renderer decodes), `savePng` writes only the PNG it
+  encodes itself, atomically, without creating folders.
 
 ## Main process
 
@@ -45,8 +50,8 @@ Logic lives in electron-free `core/` modules with injected dependencies (fetch, 
 
 | Area | Files | Tested by |
 |---|---|---|
-| Core | `src/main/core/`: `dataFs.ts` (sandbox, atomic writes, rename, scan, temp cleanup), `assetPath.ts`, `imageImport.ts`, `sessionCreated.ts`, `pixellabClient.ts`, `jobService.ts`, `resultImages.ts`; plus `src/main/png.ts` | `scripts/test-main-fs.ts`, `scripts/test-jobs.ts` |
-| Electron glue | `index.ts` (startup, window, quit), `paths.ts` (app root, data-root safety), `assetProtocol.ts`, `devScreenshot.ts`, `jobs.ts` (JobService wiring, `jobs:*` handlers), thin `ipc/*` handlers (`images.ts` adds only the file dialog; `app.ts` the close protocol) | the running app |
+| Core | `src/main/core/`: `dataFs.ts` (sandbox, atomic writes, rename, scan, temp cleanup), `assetPath.ts`, `imageImport.ts`, `imageFiles.ts` (files outside the data root), `sessionCreated.ts`, `pixellabClient.ts`, `jobService.ts`, `resultImages.ts`; plus `src/main/png.ts` | `scripts/test-main-fs.ts`, `scripts/test-jobs.ts` |
+| Electron glue | `index.ts` (startup, window, quit), `paths.ts` (app root, data-root safety), `assetProtocol.ts`, `devScreenshot.ts`, `jobs.ts` (JobService wiring, `jobs:*` handlers), thin `ipc/*` handlers (`images.ts` adds only the file dialog; `files.ts` the open and save dialogs; `app.ts` the close protocol) | the running app |
 
 Startup (`src/main/index.ts`):
 1. `registerAssetScheme()` before `ready`; single-instance lock in packaged builds only (dev respawns main on change:
@@ -163,7 +168,7 @@ Under `src/renderer/src/`. Dependencies point down the table; the last column is
 | `stores/` | Pinia setup stores. Contracts in `stores/types.ts` (`*StoreApi`, `DocHandle`) | core, services, `editor/types.ts` (types, sanitizers) |
 | `editor/` | The three.js viewport (`EditorViewport` and its views): plain classes, non-reactive, fed by `DocSource`, reporting through events | core, three. Never stores or services |
 | `services/` | Global UI singletons (next section) | other services |
-| `core/` | Framework-free logic: persisted model and migrations (`model.ts`), state producers (`docState.ts`), generate preflight (`generate.ts`), rig math (`rig/`), undo (`undo/`), `util/` | `@shared` only. No Vue, three, stores, services or `window.api` |
+| `core/` | Framework-free logic: persisted model and migrations (`model.ts`), state producers (`docState.ts`), generate preflight (`generate.ts`), rig math (`rig/`), undo (`undo/`), pixel-art algorithms (`pixelart/`), `util/` | `@shared` only. No Vue, three, stores, services or `window.api` (`pixelart/decode.ts` alone uses browser image APIs; node tests never import it) |
 | `styles/` | `theme.css` tokens, `base.css`, `controls.css`, `utilities.css`, loaded once by `bootstrap.ts` | |
 
 - Entries `main.ts` and `testbed.ts` call `mountApp()` (`bootstrap.ts`: Pinia, `v-tooltip`, global error handling).
@@ -198,6 +203,7 @@ launch. Not persisted: camera views (per doc, in memory), selection, playback. P
 | `expanded` | Expanded explorer node rels |
 | `display` | Editor toolbar toggles (`DisplayOptions`, defaults `DEFAULT_DISPLAY` in `editor/types.ts`): floor, frame image, COCO, skeleton, ghosts (`ghostCount`, `ghostColor`), gizmo space, ortho. `cocoEdit` is saved false, `gizmoMode` as `rotate` |
 | `explorerWidth`, `thumbHeight` | Explorer width; frame-track thumbnail height (56–240) |
+| `img2pixel` | Img to PixelArt: active sub-tool id and Rectify To Grid's output options (`docs/img2pixel/img2pixel.md`) |
 
 - Read once when the store is created; missing or invalid fields fall back to defaults (`parseWorkspace()`).
   `update(patch)` merges, skips no-op patches and writes debounced (400 ms); patches made before the read finishes are
@@ -212,14 +218,16 @@ launch. Not persisted: camera views (per doc, in memory), selection, playback. P
    markRaw(Root) }` to `TOOLS` in `tools/registry.ts` (NavBar and `App.vue` pick it up). Hidden tools stay mounted
    (`KeepAlive`): pause heavy work in `onDeactivated`, resume in `onActivated`.
 2. UI from `components/common/` and `styles/`; dialogs, toasts, menus, shortcuts and close handling via the services.
-   Tag panes `data-zone`, scope shortcuts to zones (new names go into `ZONES`). Ctrl+S/Z/Y and Ctrl+Shift+Z always act
-   on Skel Anim's active doc (`installDocumentShortcuts()` in `stores/tabs.ts`): bind them zone-scoped or gate them.
+   Tag panes `data-zone`, scope shortcuts to zones (new names go into `ZONES`). Ctrl+S/Z/Y and Ctrl+Shift+Z act on
+   Skel Anim's active doc only while Skel Anim is the active tool (`installDocumentShortcuts(isActive)` in
+   `stores/tabs.ts`, predicate from `App.vue`); otherwise they decline, so another tool may bind them in its zones.
 3. State: Pinia setup stores with a typed `*StoreApi`, frozen snapshots (`shallowRef` + `deepFreeze()`), nothing large
    reactive (never three.js objects); framework-free logic in `core/`. Unsaved work: `registerCloseHandler()`.
-4. Files only through `window.api.fs`, following the rules above. The data root is Skel Anim's today: a non-dot
-   root dir shows in its explorer as a folder. Use `data/.<id>/` (hidden from `scanData()`), and either name images so
-   they do not match `IMAGE_FILE_RE` or exempt the dir in `sessionEntryFor()`: otherwise the session sweep deletes
-   them (Session sweep, above). UI state: optional `WorkspaceState` fields, validated in `parseWorkspace()`.
+4. Files only through `window.api.fs`, following the rules above, or `window.api.files` for files the user picks
+   anywhere else (native dialogs). The data root is Skel Anim's today: a non-dot root dir shows in its explorer as a
+   folder. Use `data/.<id>/` (hidden from `scanData()`), and either name images so they do not match `IMAGE_FILE_RE`
+   or exempt the dir in `sessionEntryFor()`: otherwise the session sweep deletes them (Session sweep, above). UI
+   state: optional `WorkspaceState` fields, validated in `parseWorkspace()`.
 5. New system access: an IPC method (see above), logic in `src/main/core/`; network calls return `Result<T>`.
 6. Tests: a tsx script with a `check(name, ok)` helper, a pass/fail count and exit code 1 on failure (like
    `scripts/test-main-fs.ts`), chained into `npm test`. Docs: `docs/<id>/<id>.md`, a row in the root `CLAUDE.md` "Read
@@ -231,11 +239,12 @@ launch. Not persisted: camera views (per doc, in memory), selection, playback. P
 |---|---|---|
 | `npm run typecheck`, `npm run lint` | `tsc` (node), `vue-tsc` (web), `tsc` (scripts); ESLint (`lint:fix` autofixes) | types; CodeGuide mechanics |
 | `npm run test:rig` | `scripts/verify-rig.ts` | rig numerics on the fixtures (`docs/skelanim/rig.md`) |
-| `npm run test:main` | `scripts/test-main-fs.ts`, `scripts/test-jobs.ts` | sandbox, atomic writes, renames, scan, temp cleanup, junction guard, asset URLs, PNG import, session sweep, PixelLab mapping; job service with fake fetch and clock (backoff, 404s, deadline, cancel, restart without resubmit, result image shapes) |
-| `npm run test:docs` | `stores/doc/selftest.ts` | documents, tabs and workspace stores against an in-memory `window.api` mimicking main's fs rules |
+| `npm run test:main` | `scripts/test-main-fs.ts`, `scripts/test-jobs.ts` | sandbox, atomic writes, renames, scan, temp cleanup, junction guard, asset URLs, PNG import, image files (open limits, RGBA checks, save names, PNG round-trip), session sweep, PixelLab mapping; job service with fake fetch and clock (backoff, 404s, deadline, cancel, restart without resubmit, result image shapes) |
+| `npm run test:docs` | `stores/doc/selftest.ts` | documents, tabs, workspace and rectify stores against an in-memory `window.api` mimicking main's fs rules (image decoding stubbed) |
 | `npm run test:playback` | `stores/job/playbackJobs.test.ts` | playback and the jobs store (apply, estimate, submit) with mocks |
+| `npm run test:pixelart` | `scripts/test-pixelart.ts` | Img to PixelArt's grid model, estimator and rectifier on synthetic upscales, options, colour quantizer, edge snapping on sprite sheets, degenerate inputs and the real samples |
 
-- `npm test` runs the four: plain tsx, no framework, no Electron, network or generations; the renderer-side two use
+- `npm test` runs the five: plain tsx, no framework, no Electron, network or generations; the renderer-side two use
   `--tsconfig tsconfig.web.json`. `test:main` makes temp dirs under `PT_TEST_TMP` (default: OS temp).
 - Testbed (dev only): `npm run dev:testbed` (`src/renderer/src/testbed/`) drives the real `EditorViewport` and
   `core/rig` on `testbed/fixtures`, no IPC. `npm run fixtures` costs money (`docs/pixellab.md`).
@@ -248,13 +257,15 @@ Running the app for a check:
    (poll `/health` first; `PT_SCREENSHOT_PORT` changes the port). In dev the window paints while covered.
 4. Drive it with Playwright `chromium.connectOverCDP('http://127.0.0.1:9222')`. Pinia store `<id>`:
    `document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('<id>')` (`settings`, `workspace`,
-   `tabs`, `documents`, `explorer`, `jobs`, `playback`). Dev only:
+   `tabs`, `documents`, `explorer`, `jobs`, `playback`, `rectify`). Dev only:
    - `window.__editorViewport` (set by `EditorPane.vue`): `projectBone(bone)`, `projectCoco(i)` and `debugPickAt(x, y)`
      (→ `{ axis, bone, coco }`) use CSS px relative to the editor canvas: add its `getBoundingClientRect()` origin
      before `page.mouse.click`. Getters `selectedBone`, `gizmoMode`, `renderCount`.
    - In-page imports: `await import('/src/core/rig/fk.ts')` (the renderer root is `src/renderer`); shared modules via
-     `/@fs/<absolute project path, forward slashes>/src/shared/<file>.ts`. `PT_TEST_IMPORT_FILE=<absolute png>` makes
-     image import skip the file dialog.
+     `/@fs/<absolute project path, forward slashes>/src/shared/<file>.ts`.
+   - Dialog hooks (unpackaged builds, absolute paths): `PT_TEST_IMPORT_FILE=<file>` replaces the open dialog of image
+     import (needs a PNG) and of `files.openImage`; `PT_TEST_SAVE_FILE=<file.png>` replaces the save dialog of
+     `files.savePng` (every save overwrites it; write it outside `data/`).
 5. Stop: kill the process tree owning port 5173, e.g. PowerShell
    `taskkill /T /F /PID (Get-NetTCPConnection -LocalPort 5173 -State Listen).OwningProcess`. Never kill all `node.exe`
    (Claude Code runs on node). A hard kill skips the close handshake: unsaved edits are lost; the sweep runs next start.

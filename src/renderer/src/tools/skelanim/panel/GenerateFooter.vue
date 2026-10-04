@@ -40,7 +40,7 @@ function onGenerate(): void {
 </script>
 
 <template>
-  <footer class="generate-footer col gap-2">
+  <footer class="panel-footer col gap-2">
     <div class="row gap-2 text-sm">
       <span
         class="tabular"
@@ -77,12 +77,3 @@ function onGenerate(): void {
     </button>
   </footer>
 </template>
-
-<style scoped>
-.generate-footer {
-  flex: 0 0 auto;
-  padding: var(--space-3);
-  border-top: 1px solid var(--border);
-  background: var(--bg-2);
-}
-</style>

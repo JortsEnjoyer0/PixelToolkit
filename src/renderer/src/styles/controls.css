@@ -3,18 +3,20 @@
  * Vocabulary:
  *   buttons     .btn .btn-primary .btn-danger .btn-ghost .btn-icon .btn-sm .btn-lg .btn-link .btn-group .is-active .is-loading
  *   inputs      .input .input-sm .input-number .input-mono .input-color .textarea .select .input-group .input-affix .input-affix-end .is-invalid
- *   checkbox    .checkbox .checkbox-input .checkbox-label     range  .range (--fill)     .number-slider
+ *   checkbox    .checkbox .checkbox-input .checkbox-label     range  .range (--fill)     .number-slider .step-slider
  *   layout      .toolbar(.toolbar-bottom/.toolbar-plain/.toolbar-vertical) .toolbar-separator .toolbar-spacer
- *               .panel .panel-header .panel-body .section .section-header .section-body .group-title .divider
+ *               .panel .panel-header .panel-body .panel-footer .control-panel .section .section-header .section-body
+ *               .group-title .divider
  *   forms       .form-grid .form-row .form-label .form-control .form-hint .form-error .form-span .field .field-label
  *   lists       .list .list-row .tree-row(--depth) .tree-twisty .list-row-icon .list-row-label .list-row-meta
  *               .is-selected .is-focused .is-disabled
  *   tabs        .tabs .tab .tab-label .tab-close .is-active
  *   popups      .tooltip .tooltip-shortcut .kbd .menu .menu-item .menu-icon .menu-label .menu-shortcut .menu-separator
- *               .dialog-layer .dialog(.dialog-sm/-md/-lg) .dialog-header .dialog-title .dialog-body .dialog-message
+ *               .dialog-layer .dialog(.dialog-sm/-md/-lg/-xl) .dialog-header .dialog-title .dialog-body .dialog-message
  *               .dialog-detail .dialog-footer .dialog-footer-start .toast-stack .toast(.toast-info/-success/-warning/-error)
  *   misc        .badge(.badge-accent/-success/-warning/-danger) .dot .notice(.notice-info/-success/-warning/-danger)
  *               .spinner .checker .splitter .empty-state
+ *   canvas views .canvas-view(.is-dragover) .view-overlay(-tr/-bottom) .view-float .view-hud .view-hint
  */
 
 /* ---------- Buttons ---------- */
@@ -537,6 +539,26 @@
   flex: 0 0 auto;
 }
 
+/* StepSlider: range over listed values + the current value's text */
+.step-slider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.step-slider > .range {
+  flex: 1 1 auto;
+}
+
+.step-slider-value {
+  flex: 0 0 auto;
+  min-width: 3.5em;
+  color: var(--text-dim);
+  font-size: var(--font-size-sm);
+  text-align: right;
+}
+
 /* ---------- Toolbars ---------- */
 
 .toolbar {
@@ -626,6 +648,21 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
+}
+
+/* Pinned strip under a panel's scrolling body (the panel's primary action) */
+.panel-footer {
+  flex: 0 0 auto;
+  padding: var(--space-3);
+  border-top: 1px solid var(--border);
+  background: var(--bg-2);
+}
+
+/* A tool's fixed-width settings column left of its stage (with .panel) */
+.control-panel {
+  flex: 0 0 auto;
+  width: var(--panel-width);
+  border-right: 1px solid var(--border);
 }
 
 .section {
@@ -1099,6 +1136,11 @@
   width: 640px;
 }
 
+/* Viewers (e.g. Img to PixelArt's output preview) */
+.dialog-xl {
+  width: min(960px, 92vw);
+}
+
 .dialog-header {
   display: flex;
   align-items: center;
@@ -1489,6 +1531,95 @@ html.is-resizing-row * {
   color: var(--text-dim);
   font-size: 14px;
   font-weight: var(--font-weight-medium);
+}
+
+/* ---------- Canvas views (pan / zoom image viewers, tools/img2pixel/view/CanvasView.ts) ---------- */
+
+/* Host of a CanvasView canvas (an .abs-fill child) and its overlays */
+.canvas-view {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-0);
+}
+
+/* A focusable view shows the keyboard ring inset, above the canvas */
+.canvas-view:focus-visible {
+  outline: none;
+}
+
+.canvas-view:focus-visible::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-raised);
+  box-shadow: inset 0 0 0 2px var(--focus-ring);
+  pointer-events: none;
+}
+
+/* A file is dragged over a view that accepts drops */
+.canvas-view.is-dragover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-raised);
+  border: 2px solid var(--accent);
+  background: var(--accent-dim);
+  pointer-events: none;
+}
+
+/* Overlay rows over a view; only buttons inside take the pointer, so read-outs never block the canvas */
+.view-overlay {
+  position: absolute;
+  z-index: var(--z-raised);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.view-overlay .btn {
+  pointer-events: auto;
+}
+
+.view-overlay-tr {
+  top: var(--space-2);
+  right: var(--space-2);
+}
+
+.view-overlay-bottom {
+  left: var(--space-2);
+  right: var(--space-2);
+  bottom: var(--space-2);
+}
+
+/* Buttons floating over the image */
+.view-float {
+  background: color-mix(in srgb, var(--bg-2) 85%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+/* Read-out chip: zoom, cursor position */
+.view-hud {
+  flex: 0 0 auto;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius);
+  background: var(--note-bg);
+  color: var(--text-dim);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Control hints, right-aligned after the read-outs; truncated when narrow */
+.view-hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-faint);
+  font-size: var(--font-size-xs);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---------- Keyframes ---------- */

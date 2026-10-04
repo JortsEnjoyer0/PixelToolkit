@@ -1,6 +1,7 @@
 // window.api contract: IPC channel names, invoke methods and the main → renderer event map.
 // Shared by main, preload and renderer. Types and constants only (no runtime deps).
 import type { AppSettings, SettingsPatch } from './settings';
+import type { RgbaImage } from './image';
 import type { KeypointOut, Usage } from './pixellab';
 import type { JobRecord, JobUpdateEvent, SubmitAnimateInput, SubmitAnimateResult } from './jobs';
 
@@ -21,6 +22,8 @@ export const IPC = {
   imagesImportBase: 'images:importBase',
   imagesImportReference: 'images:importReference',
   imagesCopyToAnimation: 'images:copyToAnimation',
+  filesOpenImage: 'files:openImage',
+  filesSavePng: 'files:savePng',
   plBalance: 'pixellab:balance',
   plEstimateSkeleton: 'pixellab:estimateSkeleton',
   jobsSubmitAnimate: 'jobs:submitAnimate',
@@ -89,6 +92,13 @@ export interface ImportedImage {
   offset: [number, number];
   /** Source file name without extension (default label). */
   sourceName: string;
+}
+
+/** An image file picked in the open dialog (any folder), undecoded. */
+export interface OpenedImageFile {
+  /** File name with extension. */
+  name: string;
+  bytes: Uint8Array;
 }
 
 /** GET /balance: subscription.generations (remaining) / subscription.total, credits.usd. */
@@ -168,6 +178,19 @@ export interface PixelToolkitApi {
     importReference(charRel: string, animName: string): Promise<ImportedImage | null>;
     /** Copies the file `srcFile` (a file name inside charRel, e.g. "base.<uid>.png") to "<animName>.<newUid>.png". */
     copyToAnimation(charRel: string, srcFile: string, animName: string): Promise<{ uid: string }>;
+  };
+  /**
+   * Files outside the data root (Img to PixelArt), only ever through a native dialog the user confirms. Unexpected
+   * failures reject with a user-facing Error.
+   */
+  files: {
+    /** Open dialog (OPEN_IMAGE_EXTENSIONS); the file's name and bytes, or null when cancelled. Rejects above MAX_OPEN_IMAGE_BYTES. */
+    openImage(): Promise<OpenedImageFile | null>;
+    /**
+     * Save dialog (PNG filter, `suggestedName` in the last used folder); encodes `img` losslessly as 8-bit RGBA PNG and
+     * writes it atomically. Resolves the absolute path written, or null when cancelled.
+     */
+    savePng(img: RgbaImage, suggestedName: string): Promise<string | null>;
   };
   /** Typed PixelLab operations; the key never leaves main. Never reject. */
   pixellab: {

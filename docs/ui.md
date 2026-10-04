@@ -1,8 +1,8 @@
 # UI building blocks
 
 Read before building or changing any UI: styling, shared controls, the shell, dialogs, toasts, shortcuts, focus. Skel
-Anim panels and key bindings: [skelanim/skelanim.md](skelanim/skelanim.md). Startup, services table, adding a tool:
-[architecture.md](architecture.md).
+Anim panels and key bindings: [skelanim/skelanim.md](skelanim/skelanim.md); Img to PixelArt's:
+[img2pixel/img2pixel.md](img2pixel/img2pixel.md). Startup, services table, adding a tool: [architecture.md](architecture.md).
 
 ## Theme and CSS
 
@@ -55,13 +55,14 @@ holds `ButtonVariant`, `ControlSize` (sm 22, md 28, lg 32 px) and `SelectOption`
 | Component | Use | Notable props and behaviour |
 |---|---|---|
 | `IconButton` | Every icon button | `icon`, `tooltip` (also the aria-label), `shortcut` (key cap in the tooltip), `active` (toggle), `loading` (spinner, blocks clicks), `variant` (ghost default), `dangerHover`, `label`, `size`. Never takes focus on press |
-| `NumberSlider` | Numeric values | `min`, `max`, `step`, `precision`. `:slider="false"` = field only. `wheel` = mouse wheel steps (Shift ×10, Ctrl ignored). `update:modelValue` is live, `commit` fires once per finished edit. Clamps and snaps to `step`; Escape reverts without closing a dialog |
+| `NumberSlider` | Numeric values | `min`, `max`, `step`, `precision`. `:slider="false"` = field only. `wheel` = mouse wheel steps (Shift ×10, Ctrl ignored). `update:modelValue` is live, `commit` fires once per finished edit. Clamps and snaps to `step`; `nudge` = a coarser arrow / wheel step. Escape reverts without closing a dialog. Controlled: after a commit the field shows the parent's value, so a parent may normalize or wrap (grid offsets) |
 | `Select` | Styled native select, generic over string or number | Options `{ value, label, disabled? }` or plain values; the model keeps its type; a missing value shows `placeholder`. Controlled |
 | `Checkbox` | Native checkbox + label | `label` or slot, `indeterminate`. Controlled: reverts if the parent rejects the value |
 | `SecretInput` | API keys | `stored` (field starts empty, "saved" placeholder), `v-model:cleared` (removal). Patch rule in its header |
+| `StepSlider` | A value from a fixed, unevenly spaced list (Max colours) | `values`, `format` (shown beside the range), `label`. `update:modelValue` live, `commit` once per change; a value not in the list shows at the nearest entry |
 | `Splitter` | Resize handle between panels | `v-model:width` live, `commit` on release (persist then). `side` left (default) / right / top / bottom, `min` 120, `max` 800, `defaultWidth` (double-click resets). Arrows ±16 px (Shift ±64) |
 | `Toolbar`, `ToolbarSeparator`, `ToolbarSpacer`, `Spinner` | Control strips; busy indicator | Toolbar: `vertical`, `position="bottom"`, `plain`, `label`. Spinner: `size`, `label` |
-| `DialogFrame` | Chrome for every dialog | `title`, `icon`, `iconTone`, `size` (sm/default/md/lg = 380/440/520/640 px), `closable` (× emits `close`). Default slot = scrolling body; `#footer` slot = buttons |
+| `DialogFrame` | Chrome for every dialog | `title`, `icon`, `iconTone`, `size` (sm/default/md/lg = 380/440/520/640 px; xl = min(960 px, 92vw) for viewers), `closable` (× emits `close`). Default slot = scrolling body; `#footer` slot = buttons |
 | `ConfirmDialog`, `PromptDialog`, `ChoiceDialog` | Built-in dialog views | Rendered by `DialogHost`; never used directly |
 
 **v-tooltip** (`tooltip.ts`, registered globally by `bootstrap.ts`): one shared element `#ptk-tooltip`, nothing to mount.
@@ -80,7 +81,8 @@ that `App.vue` mounts once: `dialogs.ts` → `DialogHost`; `toasts.ts` → `Toas
 
 - `App.vue` (kept-alive tool, hosts, startup), `tools/registry.ts`, adding a tool: [architecture.md](architecture.md).
 - `components/shell/NavBar.vue`: one icon-over-label button per `TOOLS` entry (`v-model` = active tool id, accent bar on
-  the active one), Settings pinned at the bottom. Hidden tools stay mounted, and so do their shortcut registrations.
+  the active one), Settings pinned at the bottom. Labels wrap to two centred lines ("Img to PixelArt"). Hidden tools
+  stay mounted, and so do their shortcut registrations.
 - `components/shell/openSettings.ts`: `openSettings()` = `dialogs.open(SettingsDialog)`, resolving `true` after a save;
   a second call while open returns the same promise. Called by the NavBar cog and the global `Ctrl+,` (`App.vue`).
 - `SettingsDialog.vue`: groups PixelLab (key, base URL checked with `checkedBase` from `@shared/pixellab`, free "Check
@@ -91,7 +93,8 @@ that `App.vue` mounts once: `dialogs.ts` → `DialogHost`; `toasts.ts` → `Toas
 ## Interaction conventions
 
 ### Focus zones (`services/focusZone.ts`) and buttons
-- Zones: `explorer`, `tabs`, `panel`, `editor`, `frametrack` (`ZONES`; new zone names go there). Tag each zone's root
+- Zones: Skel Anim's `explorer`, `tabs`, `panel`, `editor`, `frametrack`; Img to PixelArt's `img2pixel-panel`,
+  `img2pixel-stage` (`ZONES`; new zone names go there: each tool uses its own). Tag each zone's root
   `data-zone="…"`. The zone follows the last `pointerdown` or `focusin` (captured on the document, so clicks on
   non-focusable elements and `mousedown.prevent` buttons count); outside every zone (nav bar, dialogs) it is `null`.
 - Overlays that must not take the zone carry `data-zone-ignore` (context menu, toasts). `DialogHost` restores the zone
@@ -114,6 +117,11 @@ that `App.vue` mounts once: `dialogs.ts` → `DialogHost`; `toasts.ts` → `Toas
   (`services/editorState.ts`; `undoRedo` in `stores/tabs.ts` checks it too). `noRepeat` ignores auto-repeat (Ctrl+S).
 - **An instance that may not be current must check and return `false`**: kept-alive tools, per-doc components
   (`isCurrent()` in `FrameTrack.vue`). Keys meant for a focused button are declined too (`fromButton` in `ExplorerPanel.vue`).
+  Skel Anim's global document keys (Ctrl+S, Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z) decline unless it is the active tool
+  (`installDocumentShortcuts(isActive)`, `App.vue`).
+- Other document-level listeners of a kept-alive tool (e.g. `paste`, `useImagePaste()` in `tools/img2pixel/`) are added
+  in `onMounted` / `onActivated` and removed in `onDeactivated` / `onBeforeUnmount`; skip events while a modal is open
+  (`isModalOpen()`) or when the target is a text field (`isTextEditable()`).
 - The editor's own keys (WASD / Space / C fly, Escape cancels a drag) live on its container in `editor/EditorViewport.ts`.
 - Text fields commit on blur: call `blurTextField()` before reading `dirty`, saving or switching the active doc. For
   one commit per edit (Enter or blur; Escape reverts) reuse `tools/skelanim/panel/CommitField.vue`.

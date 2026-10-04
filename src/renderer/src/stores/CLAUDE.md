@@ -1,6 +1,8 @@
 # stores/
 
 Pinia stores behind Skel Anim. Read `docs/skelanim/skelanim.md` first ("Documents" to "Estimate and generation flow").
+`rectify.ts` is Img to PixelArt's (`docs/img2pixel/img2pixel.md`): a markRaw source in a shallowRef, no `data/` IO;
+the rules below are Skel Anim's.
 
 - **State:** immutable, copy-on-write: change it only via `doc.apply(label, producer)` (`core/docState.ts` producers);
   never mutate `doc.state.value` (frozen in dev and tests). DocHandles are `markRaw`: keep them in `shallowReactive`

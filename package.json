@@ -21,11 +21,12 @@
     "lint": "eslint --cache .",
     "lint:fix": "eslint --cache --fix .",
     "fixtures": "tsx scripts/fetch-fixtures.ts",
-    "test": "npm run test:rig && npm run test:main && npm run test:docs && npm run test:playback",
+    "test": "npm run test:rig && npm run test:main && npm run test:docs && npm run test:playback && npm run test:pixelart",
     "test:rig": "tsx scripts/verify-rig.ts",
     "test:main": "tsx scripts/test-main-fs.ts && tsx scripts/test-jobs.ts",
     "test:docs": "tsx --tsconfig tsconfig.web.json src/renderer/src/stores/doc/selftest.ts",
     "test:playback": "tsx --tsconfig tsconfig.web.json src/renderer/src/stores/job/playbackJobs.test.ts",
+    "test:pixelart": "tsx scripts/test-pixelart.ts",
     "verify:rig": "npm run test:rig",
     "postinstall": "install-electron && electron-builder install-app-deps",
     "dev:testbed:debug": "electron-vite dev --remoteDebuggingPort 9222 -- --testbed"

@@ -2,14 +2,15 @@
 // from its DocHandle (TabInfo). A doc that leaves the documents store (unload, explorer delete) loses its tab at once.
 // The tab list and active tab are persisted into the workspace. Also exported from here:
 // - restoreWorkspace(): reopen the saved tabs that still exist (call after settings load);
-// - installDocumentShortcuts(): Ctrl+S, Ctrl+Z, Ctrl+Y / Ctrl+Shift+Z on the active doc (call once, App level).
+// - installDocumentShortcuts(isActive): Ctrl+S, Ctrl+Z, Ctrl+Y / Ctrl+Shift+Z on the active doc while isActive() (Skel
+//   Anim is the shown tool); call once, App level.
 import { defineStore } from 'pinia';
 import { computed, ref, watch } from 'vue';
 import { charNameFromRel } from '@shared/dataPaths';
 import { dialogs, isModalOpen } from '../services/dialogs';
 import { cancelEditorInteraction, editorInteracting } from '../services/editorState';
 import { mouseNotify } from '../services/mouseNotify';
-import { blurTextField, shortcuts } from '../services/shortcuts';
+import { blurTextField, shortcuts, type ShortcutHandler } from '../services/shortcuts';
 import { useDocumentsStore } from './documents';
 import { useWorkspaceStore } from './workspace';
 import type { DocHandle, TabInfo, TabsStoreApi } from './types';
@@ -213,22 +214,29 @@ let uninstallShortcuts: (() => void) | null = null;
 /**
  * Global document shortcuts (idempotent; returns the uninstall function). Ctrl+S saves the active doc, also from text
  * fields (the field is blurred first so it commits). Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z undo / redo the active doc; text
- * fields keep their native undo, and they are skipped while the editor drags. Modals suppress all of them.
+ * fields keep their native undo, and they are skipped while the editor drags. Modals suppress all of them. While
+ * `isActive()` is false (another tool is shown) they all decline, so the keys go to that tool or the browser.
  */
-export function installDocumentShortcuts(): () => void {
+export function installDocumentShortcuts(isActive: () => boolean): () => void {
   if (uninstallShortcuts)
     return uninstallShortcuts;
   // Create the stores now: the documents store installs autosave, the close handler and the beforeunload guard
   useTabsStore();
+  const gated = (fn: () => void): ShortcutHandler => () => {
+    if (!isActive())
+      return false;
+    fn();
+    return true;
+  };
   const offs = [
-    shortcuts.register('global', 'ctrl+s', () => {
+    shortcuts.register('global', 'ctrl+s', gated(() => {
       const doc = useTabsStore().activeDoc;
       if (doc)
         void useDocumentsStore().save(doc.id);
-    }, { allowInInputs: true, noRepeat: true }),
-    shortcuts.register('global', 'ctrl+z', () => undoRedo('undo'), { blockWhileInteracting: true }),
-    shortcuts.register('global', 'ctrl+y', () => undoRedo('redo'), { blockWhileInteracting: true }),
-    shortcuts.register('global', 'ctrl+shift+z', () => undoRedo('redo'), { blockWhileInteracting: true })
+    }), { allowInInputs: true, noRepeat: true }),
+    shortcuts.register('global', 'ctrl+z', gated(() => undoRedo('undo')), { blockWhileInteracting: true }),
+    shortcuts.register('global', 'ctrl+y', gated(() => undoRedo('redo')), { blockWhileInteracting: true }),
+    shortcuts.register('global', 'ctrl+shift+z', gated(() => undoRedo('redo')), { blockWhileInteracting: true })
   ];
   uninstallShortcuts = () => {
     for (const off of offs)
